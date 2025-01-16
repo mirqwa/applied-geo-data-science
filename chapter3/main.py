@@ -15,4 +15,6 @@ world.plot(ax=ax, color="lightgray")
 capitals.plot(ax=ax, color="black", markersize=10, marker="o")
 grat.plot(ax=ax, color="lightgray", linewidth=0.5)
 
+ax.set(xlabel="Longitude(Degrees)", ylabel="Latitude(Degrees)", title="WGS 1984 Datum")
+
 plt.show()
