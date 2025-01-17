@@ -4,23 +4,31 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 
+def save_geodf(geodf: gpd.GeoDataFrame, path: str, driver: str) -> None:
+    output_path = Path(path)
+    Path(output_path.parent).mkdir(parents=True, exist_ok=True)
+    geodf.to_file(output_path, driver=driver)
+
+
 if __name__ == "__main__":
     world = gpd.read_file("data/110m_cultural/ne_110m_admin_0_countries.shp")
     africa = world[world["CONTINENT"] == "Africa"]
     africa_capitals = gpd.read_file(
         "data/110m_cultural/ne_110m_populated_places.shp", mask=africa
     )
-    output_path = Path("data/output/africa/capitals/capitals.shp")
-    Path(output_path.parent).mkdir(parents=True, exist_ok=True)
-    africa_capitals.to_file(output_path)
+    save_geodf(
+        africa_capitals, "data/output/africa/capitals/capitals.shp", "ESRI Shapefile"
+    )
 
     bounding_box = (-170, 70, -60, 10)
     north_america_cities = gpd.read_file(
         "data/110m_cultural/ne_110m_populated_places.shp", bbox=bounding_box
     )
-    output_path = Path("data/output/north_america/capitals/capitals.geojson")
-    Path(output_path.parent).mkdir(parents=True, exist_ok=True)
-    north_america_cities.to_file(output_path, driver="GeoJSON")
+    save_geodf(
+        north_america_cities,
+        "data/output/north_america/capitals/capitals.geojson",
+        "GeoJSON",
+    )
 
     fig, ax = plt.subplots(figsize=(12, 10))
 
