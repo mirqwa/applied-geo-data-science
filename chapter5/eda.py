@@ -3,7 +3,6 @@ import geoplot.crs as gcrs
 import geoplot as gplt
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 
 
 if __name__ == "__main__":
@@ -32,6 +31,16 @@ if __name__ == "__main__":
         ),
     )
 
-    ax = gplt.webmap(listings_sub_gpd, projection=gcrs.WebMercator())
-    gplt.pointplot(listings_sub_gpd, ax=ax)
+    boroughs = gpd.read_file("data/new_york/nybb.shp")
+    boroughs = boroughs.to_crs(4326)
+
+    ax = gplt.kdeplot(
+        listings_sub_gpd,
+        shade=True,
+        cmap="Reds",
+        clip=boroughs.geometry,
+        projection=gcrs.WebMercator(),
+    )
+    gplt.polyplot(boroughs, ax=ax, zorder=1)
+
     plt.show()
