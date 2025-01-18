@@ -1,7 +1,10 @@
 from pathlib import Path
 
 import geopandas as gpd
+import geoplot.crs as gcrs
+import geoplot as gplt
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def save_geodf(geodf: gpd.GeoDataFrame, path: str, driver: str) -> None:
@@ -40,15 +43,15 @@ if __name__ == "__main__":
         "GeoJSON",
     )
 
-    fig, ax = plt.subplots(figsize=(12, 10))
-
-    world.plot(ax=ax, color="lightgray")
-    africa_capitals.plot(ax=ax, color="blue", markersize=10, marker="o")
-    north_america_cities.plot(ax=ax, color="red", markersize=10, marker="o")
-    south_america_cities.plot(ax=ax, color="green", markersize=10, marker="o")
-
-    ax.set(
-        xlabel="Longitude(Degrees)", ylabel="Latitude(Degrees)", title="WGS 1984 Datum"
+    # fig, ax = plt.subplots(figsize=(12, 10))
+    ax = gplt.webmap(world, projection=gcrs.WebMercator())
+    filtered_cities = gpd.GeoDataFrame(
+        pd.concat(
+            [africa_capitals, north_america_cities, south_america_cities],
+            ignore_index=True,
+        ),
+        crs=africa_capitals.crs,
     )
+    gplt.pointplot(filtered_cities, ax=ax)
 
     plt.show()
