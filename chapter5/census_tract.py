@@ -3,6 +3,7 @@ import geoplot as gplt
 import geoviews
 import matplotlib.pyplot as plt
 import pandas as pd
+import statistics
 
 
 def get_listings_df() -> gpd.GeoDataFrame:
@@ -34,9 +35,18 @@ def get_listings_df() -> gpd.GeoDataFrame:
     return listings_sub_gpd
 
 
-def plot_interactive_map(NY_Tracts_Agg: gpd.GeoDataFrame) -> None:
+def get_gdf_without_outliers(NY_Tracts_Agg: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    mean_price = statistics.mean(NY_Tracts_Agg["price"].dropna())
+    stdev = statistics.stdev(NY_Tracts_Agg["price"].dropna())
+    NY_Tracts_Agg_without_outliers = NY_Tracts_Agg[
+        NY_Tracts_Agg["price"] < mean_price + stdev
+    ]
+    return NY_Tracts_Agg_without_outliers
+
+
+def plot_interactive_map(data: gpd.GeoDataFrame, output_path: str) -> None:
     geoviews.extension("bokeh")
-    choropleth = geoviews.Polygons(data=NY_Tracts_Agg, vdims=["price", "GEOID"])
+    choropleth = geoviews.Polygons(data=data, vdims=["price", "GEOID"])
     choropleth.opts(
         height=600,
         width=900,
@@ -47,7 +57,7 @@ def plot_interactive_map(NY_Tracts_Agg: gpd.GeoDataFrame) -> None:
         colorbar_position="bottom",
     )
     renderer = geoviews.renderer("bokeh")
-    renderer.save(choropleth, "data/output/chapter5/interactive_map_with_outliers")
+    renderer.save(choropleth, output_path)
 
 
 if __name__ == "__main__":
@@ -69,10 +79,17 @@ if __name__ == "__main__":
     NY_Tracts_sj = NY_Tracts_sj[["GEOID", "price", "geometry"]]
     NY_Tracts_Agg = NY_Tracts_sj.dissolve(by="GEOID", aggfunc="mean")
     NY_Tracts_Agg = NY_Tracts_Agg[NY_Tracts_Agg.geom_type != "MultiPolygon"]
+    NY_Tracts_Agg_without_outliers = get_gdf_without_outliers(NY_Tracts_Agg)
 
-    plot_interactive_map(NY_Tracts_Agg)
+    plot_interactive_map(
+        NY_Tracts_Agg, "data/output/chapter5/interactive_map_with_outliers"
+    )
+    plot_interactive_map(
+        NY_Tracts_Agg_without_outliers,
+        "data/output/chapter5/interactive_map_without_outliers",
+    )
 
     gplt.choropleth(
-        NY_Tracts_Agg, hue="price", cmap="Greens", figsize=(60, 30), legend=True
+        NY_Tracts_Agg_without_outliers, hue="price", cmap="Greens", figsize=(60, 30), legend=True
     )
     plt.show()
