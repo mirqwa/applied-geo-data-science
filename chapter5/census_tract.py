@@ -1,6 +1,6 @@
 import geopandas as gpd
-import geoplot.crs as gcrs
 import geoplot as gplt
+import geoviews
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -34,6 +34,22 @@ def get_listings_df() -> gpd.GeoDataFrame:
     return listings_sub_gpd
 
 
+def plot_interactive_map(NY_Tracts_Agg: gpd.GeoDataFrame) -> None:
+    geoviews.extension("bokeh")
+    choropleth = geoviews.Polygons(data=NY_Tracts_Agg, vdims=["price", "GEOID"])
+    choropleth.opts(
+        height=600,
+        width=900,
+        title="NYC AirbnbPrice",
+        tools=["hover"],
+        cmap="Greens",
+        colorbar=True,
+        colorbar_position="bottom",
+    )
+    renderer = geoviews.renderer("bokeh")
+    renderer.save(choropleth, "data/output/chapter5/interactive_map_with_outliers")
+
+
 if __name__ == "__main__":
     NY_tracts_path = "data/tiger/tl_2021_36_tract.zip"
     NY_Tracts = gpd.read_file(NY_tracts_path)
@@ -52,7 +68,9 @@ if __name__ == "__main__":
     )
     NY_Tracts_sj = NY_Tracts_sj[["GEOID", "price", "geometry"]]
     NY_Tracts_Agg = NY_Tracts_sj.dissolve(by="GEOID", aggfunc="mean")
-    NY_Tracts_Agg = NY_Tracts_Agg[NY_Tracts_Agg.geom_type != 'MultiPolygon']
+    NY_Tracts_Agg = NY_Tracts_Agg[NY_Tracts_Agg.geom_type != "MultiPolygon"]
+
+    plot_interactive_map(NY_Tracts_Agg)
 
     gplt.choropleth(
         NY_Tracts_Agg, hue="price", cmap="Greens", figsize=(60, 30), legend=True
