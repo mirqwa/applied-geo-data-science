@@ -81,6 +81,11 @@ if __name__ == "__main__":
     NY_Tracts_Agg = NY_Tracts_Agg[NY_Tracts_Agg.geom_type != "MultiPolygon"]
     NY_Tracts_Agg_without_outliers = get_gdf_without_outliers(NY_Tracts_Agg)
 
+    gplt.choropleth(
+        NY_Tracts_Agg_without_outliers, hue="price", cmap="Greens", figsize=(60, 30), legend=True
+    )
+    plt.show()
+
     plot_interactive_map(
         NY_Tracts_Agg, "data/output/chapter5/interactive_map_with_outliers"
     )
@@ -88,8 +93,3 @@ if __name__ == "__main__":
         NY_Tracts_Agg_without_outliers,
         "data/output/chapter5/interactive_map_without_outliers",
     )
-
-    gplt.choropleth(
-        NY_Tracts_Agg_without_outliers, hue="price", cmap="Greens", figsize=(60, 30), legend=True
-    )
-    plt.show()
