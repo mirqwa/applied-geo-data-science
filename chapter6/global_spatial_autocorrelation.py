@@ -1,6 +1,7 @@
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 import statistics
 from pysal.lib import weights
 
@@ -76,5 +77,19 @@ def calculate_weight_and_lag(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return data
 
 
+def plot_moran_i(data: gpd.GeoDataFrame) -> None:
+    f, ax = plt.subplots(1, figsize=(10, 10))
+    sns.regplot(
+        x="price_std", y="price_lag_std", ci=None, data=data, line_kws={"color": "r"}
+    )
+    ax.axvline(0, c="k", alpha=0.8)
+    ax.axhline(0, c="k", alpha=0.8)
+    ax.set_title("Moran Plot - NYC Airbnb Price")
+    ax.set_xlabel("Standardized Price")
+    ax.set_ylabel("Standardized Price Lag")
+    plt.show()
+
+
 if __name__ == "__main__":
     data = calculate_weight_and_lag(get_data())
+    plot_moran_i(data)
