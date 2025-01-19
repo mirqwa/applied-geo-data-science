@@ -2,6 +2,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
 import statistics
+from pysal.lib import weights
 
 
 def get_listings_df() -> gpd.GeoDataFrame:
@@ -68,3 +69,5 @@ def get_data() -> gpd.GeoDataFrame:
 
 if __name__ == "__main__":
     data = get_data()
+    w = weights.Queen.from_dataframe(data)
+    w.transform = "R"
