@@ -67,7 +67,14 @@ def get_data() -> gpd.GeoDataFrame:
     return NY_Tracts_Agg_without_outliers
 
 
-if __name__ == "__main__":
-    data = get_data()
+def calculate_weight_and_lag(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     w = weights.Queen.from_dataframe(data)
     w.transform = "R"
+    data["price_lag"] = weights.spatial_lag.lag_spatial(w, data["price"])
+    data["price_std"] = data["price"] - data["price"].mean()
+    data["price_lag_std"] = data["price_lag"] - data["price_lag"].mean()
+    return data
+
+
+if __name__ == "__main__":
+    data = calculate_weight_and_lag(get_data())
