@@ -75,9 +75,7 @@ def get_data() -> gpd.GeoDataFrame:
     return NY_Tracts_Agg_without_outliers
 
 
-def calculate_weight_and_lag(
-    data: gpd.GeoDataFrame, value_column: str
-) -> gpd.GeoDataFrame:
+def calculate_weight_and_lag(data: gpd.GeoDataFrame, value_column: str) -> tuple:
     w = weights.Queen.from_dataframe(data)
     w.transform = "R"
     data[f"{value_column}_lag"] = weights.spatial_lag.lag_spatial(w, data[value_column])
@@ -105,7 +103,9 @@ def plot_moran_i(data: gpd.GeoDataFrame, value_column: str) -> None:
     plt.show()
 
 
-def calculate_and_plot_moran1(data: gpd.GeoDataFrame, value_column: str, w) -> None:
+def calculate_and_plot_moran1(
+    data: gpd.GeoDataFrame, value_column: str, w: weights.weights
+) -> None:
     morans_stat = esda.moran.Moran(data[value_column], w)
     plot_moran(morans_stat)
     plt.show()
