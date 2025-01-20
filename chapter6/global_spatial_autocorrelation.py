@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import splot
 import statistics
 from pysal.explore import esda
 from pysal.lib import weights
 from splot.esda import plot_moran
+
+import manual_moran_i
 
 
 def get_listings_df() -> gpd.GeoDataFrame:
@@ -129,3 +130,9 @@ if __name__ == "__main__":
     plot_moran_i(data, "shuffled price")
     calculate_and_plot_moran1(data, ["price", "shuffled price"], w)
     calculate_geary_c(data, ["price", "shuffled price"], w)
+
+    # computing moran index manually
+    price_moran_i = manual_moran_i.compute_moran_index(data["price"], w)
+    shuffled_price_moran_i = manual_moran_i.compute_moran_index(
+        data["shuffled price"], w
+    )
