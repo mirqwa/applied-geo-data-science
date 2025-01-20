@@ -3,8 +3,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import splot
 import statistics
+from pysal.explore import esda
 from pysal.lib import weights
+from splot.esda import plot_moran
 
 
 def get_listings_df() -> gpd.GeoDataFrame:
@@ -82,7 +85,7 @@ def calculate_weight_and_lag(
     data[f"{value_column}_lag_std"] = (
         data[f"{value_column}_lag"] - data[f"{value_column}_lag"].mean()
     )
-    return data
+    return data, w
 
 
 def plot_moran_i(data: gpd.GeoDataFrame, value_column: str) -> None:
@@ -102,9 +105,17 @@ def plot_moran_i(data: gpd.GeoDataFrame, value_column: str) -> None:
     plt.show()
 
 
+def calculate_and_plot_moran1(data: gpd.GeoDataFrame, value_column: str, w) -> None:
+    morans_stat = esda.moran.Moran(data[value_column], w)
+    plot_moran(morans_stat)
+    plt.show()
+
+
 if __name__ == "__main__":
     data = get_data()
-    data = calculate_weight_and_lag(data, "price")
+    data, w_price = calculate_weight_and_lag(data, "price")
     plot_moran_i(data, "price")
-    data = calculate_weight_and_lag(data, "shuffled price")
+    data, w_shuffled_price = calculate_weight_and_lag(data, "shuffled price")
     plot_moran_i(data, "shuffled price")
+    calculate_and_plot_moran1(data, "price", w_price)
+    calculate_and_plot_moran1(data, "shuffled price", w_shuffled_price)
