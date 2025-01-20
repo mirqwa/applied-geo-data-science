@@ -56,8 +56,7 @@ def plot_choropleth_with_signicance(data: gpd.GeoDataFrame, price_lisa) -> None:
     plt.show()
 
 
-def compute_and_plot_local_moran(data: gpd.GeoDataFrame, w: weights.weights) -> None:
-    price_lisa = esda.moran.Moran_Local(data["price"], w)
+def plot_local_moran(data: gpd.GeoDataFrame, price_lisa) -> None:
     kde_plot(price_lisa)
     plot_choropleth(data, price_lisa)
     plot_choropleth_with_quadrant_classes(data, price_lisa)
@@ -68,4 +67,5 @@ def compute_and_plot_local_moran(data: gpd.GeoDataFrame, w: weights.weights) -> 
 if __name__ == "__main__":
     data = utils.get_data()
     data, w = utils.calculate_weight_and_lag(data, "price")
-    compute_and_plot_local_moran(data, w)
+    price_lisa = esda.moran.Moran_Local(data["price"], w)
+    plot_local_moran(data, price_lisa)
