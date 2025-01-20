@@ -8,7 +8,7 @@ from pysal.explore import esda
 from pysal.lib import weights
 from splot.esda import plot_moran
 
-import manual_moran_i
+import chapter6.manual_spatial_correlation as manual_spatial_correlation
 
 
 def get_listings_df() -> gpd.GeoDataFrame:
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     calculate_geary_c(data, ["price", "shuffled price"], w)
 
     # computing moran index manually
-    price_moran_i = manual_moran_i.compute_moran_index(data["price"], w)
-    shuffled_price_moran_i = manual_moran_i.compute_moran_index(
+    price_moran_i = manual_spatial_correlation.compute_moran_index(data["price"], w)
+    shuffled_price_moran_i = manual_spatial_correlation.compute_moran_index(
         data["shuffled price"], w
     )
