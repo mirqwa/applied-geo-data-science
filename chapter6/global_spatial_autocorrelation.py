@@ -104,18 +104,18 @@ def plot_moran_i(data: gpd.GeoDataFrame, value_column: str) -> None:
 
 
 def calculate_and_plot_moran1(
-    data: gpd.GeoDataFrame, value_column: str, w: weights.weights
+    data: gpd.GeoDataFrame, variables: str, w: weights.weights
 ) -> None:
-    morans_stat = esda.moran.Moran(data[value_column], w)
-    plot_moran(morans_stat)
-    plt.show()
+    for variable in variables:
+        morans_stat = esda.moran.Moran(data[variable], w)
+        plot_moran(morans_stat)
+        plt.show()
 
 
 if __name__ == "__main__":
     data = get_data()
-    data, w_price = calculate_weight_and_lag(data, "price")
+    data, w = calculate_weight_and_lag(data, "price")
     plot_moran_i(data, "price")
-    data, w_shuffled_price = calculate_weight_and_lag(data, "shuffled price")
+    data, _ = calculate_weight_and_lag(data, "shuffled price")
     plot_moran_i(data, "shuffled price")
-    calculate_and_plot_moran1(data, "price", w_price)
-    calculate_and_plot_moran1(data, "shuffled price", w_shuffled_price)
+    calculate_and_plot_moran1(data, ["price", "shuffled price"], w)
