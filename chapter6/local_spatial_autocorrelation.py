@@ -31,9 +31,9 @@ def plot_choropleth(data: gpd.GeoDataFrame, price_lisa) -> None:
     plt.show()
 
 
-def plot_choropleth_with_quadrant_classes(data, price_lisa) -> None:
+def plot_choropleth_with_quadrant_classes(data, price_lisa,p=1) -> None:
     _, ax = plt.subplots(1, figsize=(10, 10))
-    esdaplot.lisa_cluster(price_lisa, data, p=1, ax=ax)
+    esdaplot.lisa_cluster(price_lisa, data, p=p, ax=ax)
     plt.show()
 
 
@@ -62,6 +62,7 @@ def compute_and_plot_local_moran(data: gpd.GeoDataFrame, w: weights.weights) -> 
     plot_choropleth(data, price_lisa)
     plot_choropleth_with_quadrant_classes(data, price_lisa)
     plot_choropleth_with_signicance(data, price_lisa)
+    plot_choropleth_with_quadrant_classes(data, price_lisa, 0.05)
 
 
 if __name__ == "__main__":
