@@ -1,5 +1,6 @@
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import statistics
@@ -64,6 +65,9 @@ def get_data() -> gpd.GeoDataFrame:
     NY_Tracts_Agg = NY_Tracts_sj.dissolve(by="GEOID", aggfunc="mean")
     NY_Tracts_Agg = NY_Tracts_Agg[NY_Tracts_Agg.geom_type != "MultiPolygon"]
     NY_Tracts_Agg_without_outliers = get_gdf_without_outliers(NY_Tracts_Agg)
+    prices = NY_Tracts_Agg_without_outliers["price"].copy()
+    np.random.shuffle(prices)
+    NY_Tracts_Agg_without_outliers["shuffled_price"] = prices
 
     return NY_Tracts_Agg_without_outliers
 
