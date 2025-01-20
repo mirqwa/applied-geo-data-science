@@ -2,6 +2,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import statistics
+from pysal.lib import weights
 
 
 def get_listings_df() -> gpd.GeoDataFrame:
@@ -67,3 +68,14 @@ def get_data() -> gpd.GeoDataFrame:
     NY_Tracts_Agg_without_outliers["shuffled price"] = prices
 
     return NY_Tracts_Agg_without_outliers
+
+
+def calculate_weight_and_lag(data: gpd.GeoDataFrame, value_column: str) -> tuple:
+    w = weights.Queen.from_dataframe(data)
+    w.transform = "R"
+    data[f"{value_column}_lag"] = weights.spatial_lag.lag_spatial(w, data[value_column])
+    data[f"{value_column}_std"] = data[value_column] - data[value_column].mean()
+    data[f"{value_column}_lag_std"] = (
+        data[f"{value_column}_lag"] - data[f"{value_column}_lag"].mean()
+    )
+    return data, w

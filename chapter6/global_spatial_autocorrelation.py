@@ -1,26 +1,12 @@
 import geopandas as gpd
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 import seaborn as sns
-import statistics
 from pysal.explore import esda
 from pysal.lib import weights
 from splot.esda import plot_moran
 
 import manual_spatial_correlation
 import utils
-
-
-def calculate_weight_and_lag(data: gpd.GeoDataFrame, value_column: str) -> tuple:
-    w = weights.Queen.from_dataframe(data)
-    w.transform = "R"
-    data[f"{value_column}_lag"] = weights.spatial_lag.lag_spatial(w, data[value_column])
-    data[f"{value_column}_std"] = data[value_column] - data[value_column].mean()
-    data[f"{value_column}_lag_std"] = (
-        data[f"{value_column}_lag"] - data[f"{value_column}_lag"].mean()
-    )
-    return data, w
 
 
 def plot_moran_i(data: gpd.GeoDataFrame, value_column: str) -> None:
@@ -60,9 +46,9 @@ def calculate_geary_c(
 
 if __name__ == "__main__":
     data = utils.get_data()
-    data, w = calculate_weight_and_lag(data, "price")
+    data, w = utils.calculate_weight_and_lag(data, "price")
     plot_moran_i(data, "price")
-    data, _ = calculate_weight_and_lag(data, "shuffled price")
+    data, _ = utils.calculate_weight_and_lag(data, "shuffled price")
     plot_moran_i(data, "shuffled price")
     calculate_and_plot_moran1(data, ["price", "shuffled price"], w)
     calculate_geary_c(data, ["price", "shuffled price"], w)
