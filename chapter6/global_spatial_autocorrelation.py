@@ -112,6 +112,15 @@ def calculate_and_plot_moran1(
         plt.show()
 
 
+def calculate_geary_c(
+    data: gpd.GeoDataFrame, variables: str, w: weights.weights
+) -> None:
+    for variable in variables:
+        geary_c = esda.geary.Geary(data[variable], w)
+        print(f"Geary's C for {variable}: {geary_c.C}")
+        print(f"p-value for for {variable}: {geary_c.p_sim}")
+
+
 if __name__ == "__main__":
     data = get_data()
     data, w = calculate_weight_and_lag(data, "price")
@@ -119,3 +128,4 @@ if __name__ == "__main__":
     data, _ = calculate_weight_and_lag(data, "shuffled price")
     plot_moran_i(data, "shuffled price")
     calculate_and_plot_moran1(data, ["price", "shuffled price"], w)
+    calculate_geary_c(data, ["price", "shuffled price"], w)
