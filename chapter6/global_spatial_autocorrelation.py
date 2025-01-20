@@ -67,33 +67,44 @@ def get_data() -> gpd.GeoDataFrame:
     NY_Tracts_Agg_without_outliers = get_gdf_without_outliers(NY_Tracts_Agg)
     prices = NY_Tracts_Agg_without_outliers["price"].copy()
     np.random.shuffle(prices)
-    NY_Tracts_Agg_without_outliers["shuffled_price"] = prices
+    NY_Tracts_Agg_without_outliers["shuffled price"] = prices
 
     return NY_Tracts_Agg_without_outliers
 
 
-def calculate_weight_and_lag(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def calculate_weight_and_lag(
+    data: gpd.GeoDataFrame, value_column: str
+) -> gpd.GeoDataFrame:
     w = weights.Queen.from_dataframe(data)
     w.transform = "R"
-    data["price_lag"] = weights.spatial_lag.lag_spatial(w, data["price"])
-    data["price_std"] = data["price"] - data["price"].mean()
-    data["price_lag_std"] = data["price_lag"] - data["price_lag"].mean()
+    data[f"{value_column}_lag"] = weights.spatial_lag.lag_spatial(w, data[value_column])
+    data[f"{value_column}_std"] = data[value_column] - data[value_column].mean()
+    data[f"{value_column}_lag_std"] = (
+        data[f"{value_column}_lag"] - data[f"{value_column}_lag"].mean()
+    )
     return data
 
 
-def plot_moran_i(data: gpd.GeoDataFrame) -> None:
+def plot_moran_i(data: gpd.GeoDataFrame, value_column: str) -> None:
     f, ax = plt.subplots(1, figsize=(10, 10))
     sns.regplot(
-        x="price_std", y="price_lag_std", ci=None, data=data, line_kws={"color": "r"}
+        x=f"{value_column}_std",
+        y=f"{value_column}_lag_std",
+        ci=None,
+        data=data,
+        line_kws={"color": "r"},
     )
     ax.axvline(0, c="k", alpha=0.8)
     ax.axhline(0, c="k", alpha=0.8)
-    ax.set_title("Moran Plot - NYC Airbnb Price")
-    ax.set_xlabel("Standardized Price")
-    ax.set_ylabel("Standardized Price Lag")
+    ax.set_title(f"Moran Plot - NYC Airbnb {value_column}")
+    ax.set_xlabel(f"Standardized {value_column}")
+    ax.set_ylabel(f"Standardized {value_column} Lag")
     plt.show()
 
 
 if __name__ == "__main__":
-    data = calculate_weight_and_lag(get_data())
-    plot_moran_i(data)
+    data = get_data()
+    data = calculate_weight_and_lag(data, "price")
+    plot_moran_i(data, "price")
+    data = calculate_weight_and_lag(data, "shuffled price")
+    plot_moran_i(data, "shuffled price")
