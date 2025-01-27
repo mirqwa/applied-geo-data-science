@@ -16,3 +16,4 @@ out center;
 response = requests.get(overpass_url, params={"data": overpass_query})
 data = response.json()
 df = pd.DataFrame(data["elements"])
+df.to_csv("data/osm/nairobi_worship_places.csv", index=False)
