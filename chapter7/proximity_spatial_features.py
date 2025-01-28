@@ -42,7 +42,21 @@ def get_manhattan_listings() -> gpd.GeoDataFrame:
     return manhattan_listings
 
 
+def get_distances_to_attactions(
+    manhattan_listings: gpd.GeoDataFrame, nyc_attractions: gpd.GeoDataFrame
+) -> None:
+    attractions = nyc_attractions.attaction.unique()
+    nyc_attractions_p = nyc_attractions.to_crs("EPSG:2263")
+    manhattan_listings_p = manhattan_listings.to_crs("EPSG:2263")
+    distances = manhattan_listings_p.geometry.apply(
+        lambda g: nyc_attractions_p.distance(g)
+    )
+    distances.columns = attractions
+    distances = distances.apply(lambda x: x / 3280.84, axis=1)
+
+
 if __name__ == "__main__":
     manhattan_listings = get_manhattan_listings()
     nyc_attractions = get_gdf_from_csv("data/new_york/nyc_attactions.csv")
+    get_distances_to_attactions(manhattan_listings, nyc_attractions)
     plot_manhattan_listings_and_attactions(manhattan_listings, nyc_attractions)
