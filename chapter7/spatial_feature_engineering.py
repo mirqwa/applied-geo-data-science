@@ -32,7 +32,7 @@ def get_counts_of_nearest_places_of_worship(
     )
     counts_gdf = joined.groupby("ID_left").count().reset_index()
     counts_gdf = counts_gdf[["ID_left", "ID_right"]]
-    counts_gdf.columns = ["ID", "Places_fo_worship_Count"]
+    counts_gdf.columns = ["ID", "neighbouring_places_fo_worship_count"]
     return counts_gdf
 
 
@@ -40,4 +40,7 @@ if __name__ == "__main__":
     places_of_worship_gdf = get_places_of_worship_gdf()
     places_of_worship_counts_gdf = get_counts_of_nearest_places_of_worship(
         places_of_worship_gdf
+    )
+    places_of_worship_gdf = pd.merge(
+        places_of_worship_gdf, places_of_worship_counts_gdf, on="ID", how="inner"
     )
