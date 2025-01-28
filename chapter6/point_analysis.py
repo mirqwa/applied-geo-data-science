@@ -48,7 +48,27 @@ def get_and_plot_ripleys_g(places_of_worship_gdf: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
+def get_and_plot_ripleys_k(places_of_worship_gdf: gpd.GeoDataFrame) -> None:
+    k_test = distance_statistics.k_test(
+        places_of_worship_gdf[["lon", "lat"]].values, support=40, keep_simulations=True
+    )
+    plt.plot(k_test.support, k_test.simulations.T, color="k", alpha=0.01)
+    plt.plot(k_test.support, k_test.statistic, color="orange")
+    plt.scatter(
+        k_test.support,
+        k_test.statistic,
+        cmap="viridis",
+        c=k_test.pvalue < 0.05,
+        zorder=4,
+    )
+    plt.xlabel("Distance")
+    plt.ylabel("Ripleys K Function")
+    plt.title("Ripleys K Function Plot")
+    plt.show()
+
+
 if __name__ == "__main__":
     places_of_worship_gdf = get_places_of_worship_gdf()
     plot_places_of_worship(places_of_worship_gdf)
     get_and_plot_ripleys_g(places_of_worship_gdf)
+    get_and_plot_ripleys_k(places_of_worship_gdf)
