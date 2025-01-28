@@ -30,8 +30,14 @@ def get_counts_of_nearest_places_of_worship(
         places_of_worship_gdf_buffer.set_geometry("buffer_500m")[["ID", "buffer_500m"]],
         predicate="within",
     )
+    counts_gdf = joined.groupby("ID_left").count().reset_index()
+    counts_gdf = counts_gdf[["ID_left", "ID_right"]]
+    counts_gdf.columns = ["ID", "Store_Count"]
+    return counts_gdf
 
 
 if __name__ == "__main__":
     places_of_worship_gdf = get_places_of_worship_gdf()
-    get_counts_of_nearest_places_of_worship(places_of_worship_gdf)
+    places_of_worship_counts_gdf = get_counts_of_nearest_places_of_worship(
+        places_of_worship_gdf
+    )
