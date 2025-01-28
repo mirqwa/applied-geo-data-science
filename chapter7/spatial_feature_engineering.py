@@ -16,5 +16,17 @@ def get_places_of_worship_gdf() -> gpd.GeoDataFrame:
     return places_of_worship_gdf
 
 
+def get_counts_of_nearest_places_of_worship(
+    places_of_worship_gdf: gpd.GeoDataFrame,
+) -> gpd.GeoDataFrame:
+    places_of_worship_gdf = places_of_worship_gdf.to_crs(3005)
+    buffer_size = 500  # 500 metres
+    places_of_worship_gdf_buffer = places_of_worship_gdf.copy()
+    places_of_worship_gdf_buffer["buffer_500m"] = places_of_worship_gdf_buffer.buffer(
+        buffer_size
+    )
+
+
 if __name__ == "__main__":
     places_of_worship_gdf = get_places_of_worship_gdf()
+    get_counts_of_nearest_places_of_worship(places_of_worship_gdf)
