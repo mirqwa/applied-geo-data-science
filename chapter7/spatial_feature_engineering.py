@@ -2,18 +2,18 @@ import geopandas as gpd
 import pandas as pd
 
 
-def get_places_of_worship_gdf() -> gpd.GeoDataFrame:
-    places_of_worship_df = pd.read_csv("data/osm/nairobi_worship_places.csv")
-    places_of_worship_gdf = gpd.GeoDataFrame(
-        places_of_worship_df,
+def get_gdf(csv_path: str) -> gpd.GeoDataFrame:
+    df = pd.read_csv(csv_path)
+    gdf = gpd.GeoDataFrame(
+        df,
         geometry=gpd.points_from_xy(
-            places_of_worship_df["lon"], places_of_worship_df["lat"]
+            df["lon"], df["lat"]
         ),
         crs="EPSG:4326",
     )
-    places_of_worship_gdf.reset_index(inplace=True)
-    places_of_worship_gdf.rename(columns={"index": "ID"}, inplace=True)
-    return places_of_worship_gdf
+    gdf.reset_index(inplace=True)
+    gdf.rename(columns={"index": "ID"}, inplace=True)
+    return gdf
 
 
 def get_counts_of_nearest_places_of_worship(
@@ -37,7 +37,7 @@ def get_counts_of_nearest_places_of_worship(
 
 
 if __name__ == "__main__":
-    places_of_worship_gdf = get_places_of_worship_gdf()
+    places_of_worship_gdf = get_gdf("data/osm/nairobi_worship_places.csv")
     places_of_worship_counts_gdf = get_counts_of_nearest_places_of_worship(
         places_of_worship_gdf
     )
