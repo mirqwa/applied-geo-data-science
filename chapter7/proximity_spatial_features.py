@@ -1,5 +1,15 @@
+import contextily as cx
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import pandas as pd
+
+
+def plot_manhattan_listings(manhattan_listings: gpd.GeoDataFrame) -> None:
+    manhattan_listings_wm = manhattan_listings.to_crs(epsg=3857)
+    ax = manhattan_listings_wm.plot(figsize=(10, 10), alpha=0.5, edgecolor="k")
+    cx.add_basemap(ax, crs=manhattan_listings_wm.crs, zoom=12)
+    ax.set_axis_off()
+    plt.show()
 
 
 def get_listings_gdf() -> gpd.GeoDataFrame:
@@ -29,3 +39,4 @@ def get_manhattan_listings() -> gpd.GeoDataFrame:
 
 if __name__ == "__main__":
     manhattan_listings = get_manhattan_listings()
+    plot_manhattan_listings(manhattan_listings)
