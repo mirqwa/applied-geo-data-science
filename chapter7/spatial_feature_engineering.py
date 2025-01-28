@@ -9,8 +9,10 @@ def get_places_of_worship_gdf() -> gpd.GeoDataFrame:
         geometry=gpd.points_from_xy(
             places_of_worship_df["lon"], places_of_worship_df["lat"]
         ),
-        crs=4326
+        crs="EPSG:4326",
     )
+    places_of_worship_gdf.reset_index(inplace=True)
+    places_of_worship_gdf.rename(columns={"index": "ID"}, inplace=True)
     return places_of_worship_gdf
 
 
