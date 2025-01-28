@@ -6,22 +6,27 @@ import pandas as pd
 from pointpats import distance_statistics
 
 
-def plot_places_of_worship(places_of_worship_gdf: gpd.GeoDataFrame) -> None:
+def plot_places_of_worship_and_banks(
+    places_of_worship_gdf: gpd.GeoDataFrame, banks_gdf: gpd.GeoDataFrame
+) -> None:
+    _, ax = plt.subplots(figsize=(15, 15))
     places_of_worship_wm = places_of_worship_gdf.to_crs(epsg=3857)
-    ax = places_of_worship_wm.plot(figsize=(10, 10), alpha=0.5, edgecolor="k")
+    places_of_worship_wm.plot(ax=ax, alpha=0.5, edgecolor="k")
+    banks_gdf_wm = banks_gdf.to_crs(epsg=3857)
+    banks_gdf_wm.plot(ax=ax, alpha=0.5, color="red", edgecolor="k")
     cx.add_basemap(ax, crs=places_of_worship_wm.crs, zoom=12)
     ax.set_axis_off()
     plt.show()
 
 
-def get_places_of_worship_gdf() -> gpd.GeoDataFrame:
-    places_of_worship_df = pd.read_csv("data/osm/nairobi_worship_places.csv")
-    places_of_worship_gdf = gpd.GeoDataFrame(
-        places_of_worship_df,
-        geometry=gpd.points_from_xy(places_of_worship_df.lon, places_of_worship_df.lat),
+def get_gdf(csv_path: str) -> gpd.GeoDataFrame:
+    df = pd.read_csv(csv_path)
+    gdf = gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(df.lon, df.lat),
         crs="EPSG:4326",
     )
-    return places_of_worship_gdf
+    return gdf
 
 
 def get_and_plot_ripleys_g(places_of_worship_gdf: gpd.GeoDataFrame) -> None:
@@ -68,7 +73,8 @@ def get_and_plot_ripleys_k(places_of_worship_gdf: gpd.GeoDataFrame) -> None:
 
 
 if __name__ == "__main__":
-    places_of_worship_gdf = get_places_of_worship_gdf()
-    plot_places_of_worship(places_of_worship_gdf)
+    places_of_worship_gdf = get_gdf("data/osm/nairobi_worship_places.csv")
+    banks_gdf = get_gdf("data/osm/nairobi_banks.csv")
+    plot_places_of_worship_and_banks(places_of_worship_gdf, banks_gdf)
     get_and_plot_ripleys_g(places_of_worship_gdf)
     get_and_plot_ripleys_k(places_of_worship_gdf)
