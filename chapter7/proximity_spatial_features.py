@@ -12,14 +12,14 @@ def plot_manhattan_listings(manhattan_listings: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
-def get_listings_gdf() -> gpd.GeoDataFrame:
-    listings = pd.read_csv("data/listings.csv.gz", compression="gzip")
-    listings_gdf = gpd.GeoDataFrame(
-        listings,
-        geometry=gpd.points_from_xy(listings["longitude"], listings["latitude"]),
+def get_gdf_from_csv(csv_path: str) -> gpd.GeoDataFrame:
+    df = pd.read_csv(csv_path)
+    gdf = gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(df["longitude"], df["latitude"]),
         crs="EPSG:4326",
     )
-    return listings_gdf
+    return gdf
 
 
 def get_manhattan() -> gpd.GeoDataFrame:
@@ -30,7 +30,7 @@ def get_manhattan() -> gpd.GeoDataFrame:
 
 
 def get_manhattan_listings() -> gpd.GeoDataFrame:
-    listings_gdf = get_listings_gdf()
+    listings_gdf = get_gdf_from_csv("data/listings.csv.gz")
     manhattan = get_manhattan()
     listings_mask = listings_gdf.within(manhattan.loc[3, "geometry"])
     manhattan_listings = listings_gdf.loc[listings_mask]
@@ -39,4 +39,5 @@ def get_manhattan_listings() -> gpd.GeoDataFrame:
 
 if __name__ == "__main__":
     manhattan_listings = get_manhattan_listings()
+    nyc_attractions = get_gdf_from_csv("data/new_york/nyc_attactions.csv")
     plot_manhattan_listings(manhattan_listings)
