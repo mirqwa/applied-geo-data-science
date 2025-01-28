@@ -52,7 +52,33 @@ def get_distances_to_attactions(
         lambda g: nyc_attractions_p.distance(g)
     )
     distances.columns = attractions
+    # convert feet to kilometers
     distances = distances.apply(lambda x: x / 3280.84, axis=1)
+    distances_1km = distances.apply(lambda x: x <= 1, axis=1).sum(axis=1)
+    distances_2km = distances.apply(lambda x: x <= 2, axis=1).sum(axis=1)
+    distances_3km = distances.apply(lambda x: x <= 3, axis=1).sum(axis=1)
+    distances_4km = distances.apply(lambda x: x <= 4, axis=1).sum(axis=1)
+    distances_5km = distances.apply(lambda x: x <= 5, axis=1).sum(axis=1)
+    distances_df = pd.concat(
+        [distances_1km, distances_2km, distances_3km, distances_4km, distances_5km],
+        axis=1,
+    )
+    distances_df.columns = [
+        "Attractions 1KM",
+        "Attractions 2KM",
+        "Attractions 3KM",
+        "Attractions 4KM",
+        "Attractions 5KM",
+    ]
+    manhattan_listings = manhattan_listings.merge(
+        distances, left_index=True, right_index=True
+    )
+    manhattan_listings = manhattan_listings.merge(
+        distances_df, left_index=True, right_index=True
+    )
+    manhattan_listings.to_csv(
+        "data/output/new_york/manhattan_listings.csv", index=False
+    )
 
 
 if __name__ == "__main__":
