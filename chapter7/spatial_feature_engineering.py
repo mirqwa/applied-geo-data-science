@@ -1,5 +1,7 @@
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 
 
 def get_gdf(csv_path: str) -> gpd.GeoDataFrame:
@@ -51,3 +53,9 @@ if __name__ == "__main__":
     places_of_worship_and_banks_count = pd.merge(
         places_of_worship_counts_gdf, banks_count_gdf, on="ID", how="inner"
     )
+    sns.scatterplot(
+        data=places_of_worship_and_banks_count,
+        y="neighbouring_places_fo_worship_count",
+        x="banks_count",
+    )
+    plt.show()
