@@ -1,7 +1,9 @@
 import contextily as cx
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from pointpats import distance_statistics
 
 
 def plot_places_of_worship(places_of_worship_gdf: gpd.GeoDataFrame) -> None:
@@ -22,6 +24,31 @@ def get_places_of_worship_gdf() -> gpd.GeoDataFrame:
     return places_of_worship_gdf
 
 
+def get_and_plot_ripleys_g(places_of_worship_gdf: gpd.GeoDataFrame) -> None:
+    g_test = distance_statistics.g_test(
+        places_of_worship_gdf[["lon", "lat"]].values, support=40, keep_simulations=True
+    )
+    plt.plot(
+        g_test.support,
+        np.median(g_test.simulations, axis=0),
+        color="k",
+        label="Simulated Data",
+    )
+    plt.plot(
+        g_test.support,
+        g_test.statistic,
+        marker="x",
+        color="orangered",
+        label="Observed Data",
+    )
+    plt.legend()
+    plt.xlabel("Distance")
+    plt.ylabel("Ripleys G Function")
+    plt.title("Ripleys G Function Plot")
+    plt.show()
+
+
 if __name__ == "__main__":
     places_of_worship_gdf = get_places_of_worship_gdf()
     plot_places_of_worship(places_of_worship_gdf)
+    get_and_plot_ripleys_g(places_of_worship_gdf)
