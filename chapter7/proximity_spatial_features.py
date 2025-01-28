@@ -4,9 +4,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def plot_manhattan_listings(manhattan_listings: gpd.GeoDataFrame) -> None:
+def plot_manhattan_listings_and_attactions(
+    manhattan_listings: gpd.GeoDataFrame, attractions: gpd.GeoDataFrame
+) -> None:
+    _, ax = plt.subplots(figsize=(15, 15))
     manhattan_listings_wm = manhattan_listings.to_crs(epsg=3857)
-    ax = manhattan_listings_wm.plot(figsize=(10, 10), alpha=0.5, edgecolor="k")
+    manhattan_listings_wm.plot(ax=ax, alpha=0.5, edgecolor="k")
+    attractions_wm = attractions.to_crs(epsg=3857)
+    attractions_wm.plot(ax=ax, alpha=0.5, color="red", edgecolor="k")
     cx.add_basemap(ax, crs=manhattan_listings_wm.crs, zoom=12)
     ax.set_axis_off()
     plt.show()
@@ -40,4 +45,4 @@ def get_manhattan_listings() -> gpd.GeoDataFrame:
 if __name__ == "__main__":
     manhattan_listings = get_manhattan_listings()
     nyc_attractions = get_gdf_from_csv("data/new_york/nyc_attactions.csv")
-    plot_manhattan_listings(manhattan_listings)
+    plot_manhattan_listings_and_attactions(manhattan_listings, nyc_attractions)
