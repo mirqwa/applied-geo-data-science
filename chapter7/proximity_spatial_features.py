@@ -19,6 +19,13 @@ def get_manhattan() -> gpd.GeoDataFrame:
     return manhattan
 
 
-if __name__ == "__main__":
+def get_manhattan_listings() -> gpd.GeoDataFrame:
     listings_gdf = get_listings_gdf()
     manhattan = get_manhattan()
+    listings_mask = listings_gdf.within(manhattan.loc[3, "geometry"])
+    manhattan_listings = listings_gdf.loc[listings_mask]
+    return manhattan_listings
+
+
+if __name__ == "__main__":
+    manhattan_listings = get_manhattan_listings()
