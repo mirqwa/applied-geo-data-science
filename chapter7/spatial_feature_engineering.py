@@ -32,7 +32,7 @@ def get_counts_of_nearest_places_of_worship(
     )
     counts_gdf = joined.groupby("ID_left").count().reset_index()
     counts_gdf = counts_gdf[["ID_left", "ID_right"]]
-    counts_gdf.columns = ["ID", "Store_Count"]
+    counts_gdf.columns = ["ID", "Places_fo_worship_Count"]
     return counts_gdf
 
 
