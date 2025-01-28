@@ -25,6 +25,11 @@ def get_counts_of_nearest_places_of_worship(
     places_of_worship_gdf_buffer["buffer_500m"] = places_of_worship_gdf_buffer.buffer(
         buffer_size
     )
+    joined = gpd.sjoin(
+        places_of_worship_gdf,
+        places_of_worship_gdf_buffer.set_geometry("buffer_500m")[["ID", "buffer_500m"]],
+        predicate="within",
+    )
 
 
 if __name__ == "__main__":
