@@ -45,3 +45,9 @@ if __name__ == "__main__":
     places_of_worship_gdf = pd.merge(
         places_of_worship_gdf, places_of_worship_counts_gdf, on="ID", how="inner"
     )
+    banks_count_gdf = get_counts_of_nearest_places_of_worship(
+        places_of_worship_gdf, banks_gdf.copy(), "banks_count"
+    )
+    places_of_worship_and_banks_count = pd.merge(
+        places_of_worship_counts_gdf, banks_count_gdf, on="ID", how="inner"
+    )
