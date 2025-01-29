@@ -15,9 +15,8 @@ np.random.seed(32)
 
 
 def plot_data(ny_census: gpd.GeoDataFrame) -> None:
-    fig, axes = plt.subplots(nrows=5, ncols=2, layout="tight")
+    _, axes = plt.subplots(nrows=7, ncols=3, layout="tight")
     axes = axes.flatten()
-    # plt.rcParams["font.size"] = "40"
     for i, col in enumerate(constants.GEO_DEMO_RN):
         ax = axes[i]
         ny_census.plot(
@@ -51,7 +50,7 @@ def calculate_moran_i(ny_census: gpd.GeoDataFrame) -> None:
 
 
 def plot_pair_plots(ny_census: gpd.GeoDataFrame) -> None:
-    selected_variables = ["PopBlwPovLvl", "UnempPop", "RetPopNoRetInc", "PopIncGT75"]
+    selected_variables = ["TotNumRentOccUnit", "PopGrad", "UnempPop", "PopBlwPovLvl"]
     sns.pairplot(ny_census[selected_variables], kind="reg", diag_kind="kde")
     plt.show()
 
