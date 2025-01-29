@@ -1,6 +1,7 @@
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from sklearn.cluster import KMeans
 
@@ -27,10 +28,7 @@ def get_and_plot_distortion(ny_census: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
-def get_and_plot_clusters(ny_census: gpd.GeoDataFrame) -> None:
-    kmeans = KMeans(n_clusters=5)
-    kmeans_5 = kmeans.fit(ny_census[constants.GEO_DEMO_RN])
-    ny_census["kmeans_5_label"] = kmeans_5.labels_
+def plot_clusters(ny_census: gpd.GeoDataFrame) -> None:
     _, ax = plt.subplots(1, figsize=(6, 6))
     ny_census.plot(
         column="kmeans_5_label",
@@ -43,6 +41,26 @@ def get_and_plot_clusters(ny_census: gpd.GeoDataFrame) -> None:
     )
     ax.set_axis_off()
     plt.show()
+
+
+def calculate_tract_average_areas(ny_census: gpd.GeoDataFrame) -> None:
+    # area in km squared
+    k5distr = ny_census.groupby("kmeans_5_label").size()
+    ny_census["area"] = (ny_census.geometry.area) * 9.2903e-8
+    area = ny_census.dissolve(by="kmeans_5_label", aggfunc="sum")["area"]
+    tract_area = pd.DataFrame({"Num. Tracts": k5distr, "Area": area})
+    tract_area["Area_per_tract"] = tract_area["Area"] / tract_area["Num. Tracts"]
+    tract_area.reset_index(inplace=True)
+    ax = tract_area.plot.bar(x="kmeans_5_label", y="Area_per_tract")
+    plt.show()
+
+
+def get_and_plot_clusters(ny_census: gpd.GeoDataFrame) -> None:
+    kmeans = KMeans(n_clusters=5)
+    kmeans_5 = kmeans.fit(ny_census[constants.GEO_DEMO_RN])
+    ny_census["kmeans_5_label"] = kmeans_5.labels_
+    plot_clusters(ny_census)
+    calculate_tract_average_areas(ny_census)
 
 
 if __name__ == "__main__":
