@@ -1,4 +1,5 @@
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 
 import constants
@@ -25,16 +26,24 @@ def clean_census_data(census_gpd: gpd.GeoDataFrame) -> None:
     census_gpd.to_file("data/us_census/ny_census_transformed.geojson", driver="GeoJSON")
 
 
+def format_values(row):
+    county = f"00{str(row['county'])}"
+    tract = f"00000{str(row['tract'])}"
+    return county[-3:], tract[-6:]
+
+
 def geo_enable_census_data() -> gpd.GeoDataFrame:
     ny_tract = gpd.read_file("data/tiger/tl_2019_36_tract.zip")
     ny_tract = ny_tract.to_crs(epsg=2263)
     ny_census_df = pd.read_csv("data/us_census/ny_census.csv")
+    ny_census_df[["county", "tract"]] = ny_census_df.apply(
+        lambda row: format_values(row), axis=1, result_type="expand"
+    )
     ny_census_df["GEOID"] = (
         ny_census_df["state"].astype(str)
         + ny_census_df["county"].astype(str)
         + ny_census_df["tract"].astype(str)
     )
-    ny_census_df = ny_census_df.drop(columns=["state", "county", "tract"])
     geo_enabled_ny_census_df = ny_tract.merge(ny_census_df, on="GEOID")
     return geo_enabled_ny_census_df
 
