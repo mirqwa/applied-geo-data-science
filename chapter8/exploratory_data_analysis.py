@@ -6,6 +6,7 @@ import seaborn as sns
 
 from esda.moran import Moran
 from libpysal.weights import Queen
+from sklearn.preprocessing import robust_scale
 
 import constants
 
@@ -75,9 +76,18 @@ def plot_correlation_heatmap(ny_census: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
+def scale_data(ny_census: gpd.GeoDataFrame) -> None:
+    scaled_variables = robust_scale(ny_census[constants.GEO_DEMO_RN])
+    ny_census[constants.GEO_DEMO_RN] = scaled_variables
+    ny_census.to_file(
+        "data/us_census/ny_census_transformed_and_scaled.geojson", driver="GeoJSON"
+    )
+
+
 if __name__ == "__main__":
     ny_census = gpd.read_file("data/us_census/ny_census_transformed.geojson")
     plot_data(ny_census)
     calculate_moran_i(ny_census)
     plot_pair_plots(ny_census)
     plot_correlation_heatmap(ny_census)
+    scale_data(ny_census)
