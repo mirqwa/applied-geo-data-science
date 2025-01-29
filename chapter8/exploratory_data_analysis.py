@@ -55,8 +55,29 @@ def plot_pair_plots(ny_census: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
+def plot_correlation_heatmap(ny_census: gpd.GeoDataFrame) -> None:
+    plt.figure(figsize=(16, 12))
+    plt.rcParams["font.size"] = "10"
+    mask = np.triu(
+        np.ones_like(ny_census[constants.GEO_DEMO_RN].corr(), dtype=np.bool_)
+    )
+    heatmap = sns.heatmap(
+        ny_census[constants.GEO_DEMO_RN].corr(),
+        mask=mask,
+        vmin=-1,
+        vmax=1,
+        annot=True,
+        cmap="coolwarm",
+    )
+    heatmap.set_title(
+        "ACS Variable Correlation Heatmap", fontdict={"fontsize": 18}, pad=16
+    )
+    plt.show()
+
+
 if __name__ == "__main__":
     ny_census = gpd.read_file("data/us_census/ny_census_transformed.geojson")
     plot_data(ny_census)
     calculate_moran_i(ny_census)
     plot_pair_plots(ny_census)
+    plot_correlation_heatmap(ny_census)
