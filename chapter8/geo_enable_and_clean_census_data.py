@@ -22,7 +22,7 @@ def clean_census_data(census_gpd: gpd.GeoDataFrame) -> None:
     census_gpd = census_gpd[constants.GEO_DEMO_RN + ["geometry"]]
     census_gpd = census_gpd[census_gpd["TotPop"] > 0]
     census_gpd.reset_index(inplace=True)
-    census_gpd.to_csv("data/us_census/ny_census_transformed.csv", index=False)
+    census_gpd.to_file("data/us_census/ny_census_transformed.json", driver="GeoJSON")
 
 
 def geo_enable_census_data() -> gpd.GeoDataFrame:
