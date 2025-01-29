@@ -1,6 +1,8 @@
 import geopandas as gpd
 import pandas as pd
 
+import constants
+
 
 def clean_census_data(census_gpd: gpd.GeoDataFrame) -> None:
     census_gpd = census_gpd.rename(
@@ -17,21 +19,7 @@ def clean_census_data(census_gpd: gpd.GeoDataFrame) -> None:
             "B17013_002E": "PopBlwPovLvl",  # "Population with income below poverty level in past 12 months"
         }
     )
-    geo_demo_rn = [
-        "TotPop",  # "Total Population"
-        "TotPopOccUnits",  # "Total population in occupied housing units"
-        "TotNumOwnOccUnit",  # "Total number of owner occupied units"
-        "TotNumRentOccUnit",  # "Total number of renter occupied units"
-        "PopIncGT75",  # "Population with income of 75000 or more"
-        "UnempPop",  # "Population in labor force and unemployed"
-        "RetPop",  # "Population that is retired with retirement income"
-        "RetPopNoRetInc",  # "Retired without retirement income"
-        "TrvTimWrk",  # "Travel time to work in minutes"
-        "PopBlwPovLvl",  # "Population with income below poverty level in past 12 months"
-    ]
-    geo_demo_rn.append("geometry")
-    census_gpd = census_gpd[geo_demo_rn]
-    geo_demo_rn.remove("geometry")
+    census_gpd = census_gpd[constants.GEO_DEMO_RN + ["geometry"]]
     census_gpd = census_gpd[census_gpd["TotPop"] > 0]
     census_gpd.reset_index(inplace=True)
     census_gpd.to_csv("data/us_census/ny_census_transformed.csv", index=False)
