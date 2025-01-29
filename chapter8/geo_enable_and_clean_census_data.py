@@ -21,7 +21,7 @@ def clean_census_data(census_gpd: gpd.GeoDataFrame) -> None:
         "TotPop",  # "Total Population"
         "TotPopOccUnits",  # "Total population in occupied housing units"
         "TotNumOwnOccUnit",  # "Total number of owner occupied units"
-        "TotNumRentOccUnit",  # "Total number of renter occupied units"       
+        "TotNumRentOccUnit",  # "Total number of renter occupied units"
         "PopIncGT75",  # "Population with income of 75000 or more"
         "UnempPop",  # "Population in labor force and unemployed"
         "RetPop",  # "Population that is retired with retirement income"
@@ -33,6 +33,8 @@ def clean_census_data(census_gpd: gpd.GeoDataFrame) -> None:
     census_gpd = census_gpd[geo_demo_rn]
     geo_demo_rn.remove("geometry")
     census_gpd = census_gpd[census_gpd["TotPop"] > 0]
+    census_gpd.reset_index(inplace=True)
+    census_gpd.to_csv("data/us_census/ny_census_transformed.csv", index=False)
 
 
 def geo_enable_census_data() -> gpd.GeoDataFrame:
