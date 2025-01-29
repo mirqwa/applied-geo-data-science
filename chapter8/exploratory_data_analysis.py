@@ -2,6 +2,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 from esda.moran import Moran
 from libpysal.weights import Queen
@@ -48,7 +49,14 @@ def calculate_moran_i(ny_census: gpd.GeoDataFrame) -> None:
     ).set_index("GEODEMO Var")
 
 
+def plot_pair_plots(ny_census: gpd.GeoDataFrame) -> None:
+    selected_variables = ["PopBlwPovLvl", "UnempPop", "RetPopNoRetInc", "PopIncGT75"]
+    sns.pairplot(ny_census[selected_variables], kind="reg", diag_kind="kde")
+    plt.show()
+
+
 if __name__ == "__main__":
     ny_census = gpd.read_file("data/us_census/ny_census_transformed.geojson")
     plot_data(ny_census)
     calculate_moran_i(ny_census)
+    plot_pair_plots(ny_census)
