@@ -5,12 +5,34 @@ import pandas as pd
 def clean_census_data(census_gpd: gpd.GeoDataFrame) -> None:
     census_gpd = census_gpd.rename(
         columns={
-            "B01003_001E": "TotPop",
-            "B25077_001E": "MedVal_OwnOccUnit",
-            "B08013_001E": "TrvTimWrk",
-            "B17013_002E": "PopBlwPovLvl",
+            "B01003_001E": "TotPop",  # "Total Population"
+            "B25026_001E": "TotPopOccUnits",  # "Total population in occupied housing units"
+            "B25008_002E": "TotNumOwnOccUnit",  # "Total number of owner occupied units"
+            "B25008_003E": "TotNumRentOccUnit",  # "Total number of renter occupied units"
+            "B06010_011E": "PopIncGT75",  # "Population with income of 75000 or more"
+            "B28007_009E": "UnempPop",  # "Population in labor force and unemployed"
+            "B19059_002E": "RetPop",  # "Population that is retired with retirement income"
+            "B19059_003E": "RetPopNoRetInc",  # "Retired without retirement income"
+            "B08013_001E": "TrvTimWrk",  # "Travel time to work in minutes"
+            "B17013_002E": "PopBlwPovLvl",  # "Population with income below poverty level in past 12 months"
         }
     )
+    geo_demo_rn = [
+        "TotPop",  # "Total Population"
+        "TotPopOccUnits",  # "Total population in occupied housing units"
+        "TotNumOwnOccUnit",  # "Total number of owner occupied units"
+        "TotNumRentOccUnit",  # "Total number of renter occupied units"       
+        "PopIncGT75",  # "Population with income of 75000 or more"
+        "UnempPop",  # "Population in labor force and unemployed"
+        "RetPop",  # "Population that is retired with retirement income"
+        "RetPopNoRetInc",  # "Retired without retirement income"
+        "TrvTimWrk",  # "Travel time to work in minutes"
+        "PopBlwPovLvl",  # "Population with income below poverty level in past 12 months"
+    ]
+    geo_demo_rn.append("geometry")
+    census_gpd = census_gpd[geo_demo_rn]
+    geo_demo_rn.remove("geometry")
+    census_gpd = census_gpd[census_gpd["TotPop"] > 0]
 
 
 def geo_enable_census_data() -> gpd.GeoDataFrame:
