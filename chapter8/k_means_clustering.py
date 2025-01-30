@@ -42,10 +42,15 @@ def calculate_tract_average_areas(ny_census: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
-def get_and_plot_clusters(ny_census: gpd.GeoDataFrame) -> None:
+def fit_model(ny_census: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     kmeans = KMeans(n_clusters=5)
     kmeans_5 = kmeans.fit(ny_census[constants.GEO_DEMO_RN])
     ny_census["kmeans_5_label"] = kmeans_5.labels_
+    return ny_census
+
+
+def get_and_plot_clusters(ny_census: gpd.GeoDataFrame) -> None:
+    ny_census = fit_model(ny_census)
     utils.plot_clusters_choropleth(ny_census, "kmeans_5_label", "Set2")
     calculate_tract_average_areas(ny_census)
     utils.plot_radial_plot(
