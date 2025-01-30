@@ -203,7 +203,7 @@ def build_model_and_plot(
 
 if __name__ == "__main__":
     manhattan_listings, manhattan_listings_subset = get_train_data()
-    build_model_and_plot(manhattan_listings_subset, manhattan_listings, M_VARS)
+    build_model_and_plot(manhattan_listings_subset.copy(), manhattan_listings, M_VARS)
 
     manhattan_listings_subset = manhattan_listings_subset.merge(
         manhattan_listings[
@@ -223,3 +223,4 @@ if __name__ == "__main__":
         how="left",
         on="id",
     )
+    build_model_and_plot(manhattan_listings_subset, manhattan_listings, G_M_VARS)
