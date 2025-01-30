@@ -1,10 +1,10 @@
+import contextily as cx
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
-import plotly.io as pio
 
-from IPython.display import HTML
 from pysal.model import spreg
 
 
@@ -121,6 +121,31 @@ def plot_residuals_neighborhood(residuals_neighborhood: pd.DataFrame) -> None:
     fig.show()
 
 
+def plot_residuals_choropleth(nyc_neighborhoods_residuals: gpd.GeoDataFrame) -> None:
+    _, ax = plt.subplots(1, figsize=(10, 10))
+    nyc_neighborhoods_residuals.plot(
+        column="neighborhood_residual",
+        cmap="vlag",
+        scheme="quantiles",
+        k=4,
+        edgecolor="white",
+        linewidth=0.1,
+        alpha=0.75,
+        legend=True,
+        ax=ax,
+    )
+    cx.add_basemap(ax, crs=nyc_neighborhoods_residuals.crs)
+    for _, row in nyc_neighborhoods_residuals.iterrows():
+        plt.annotate(
+            text=row["Name"],
+            xy=tuple([row.geometry.centroid.x, row.geometry.centroid.y]),
+            horizontalalignment="center",
+            fontsize=8,
+        )
+    ax.set_axis_off()
+    plt.show()
+
+
 if __name__ == "__main__":
     manhattan_listings, manhattan_listings_subset = get_train_data()
     ols_m = build_regression_model(manhattan_listings_subset)
@@ -131,3 +156,4 @@ if __name__ == "__main__":
         manhattan_listings, manhattan_listings_subset, ols_m
     )
     plot_residuals_neighborhood(residuals_neighborhood)
+    plot_residuals_choropleth(nyc_neighborhoods_residuals)
