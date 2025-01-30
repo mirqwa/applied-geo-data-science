@@ -30,21 +30,6 @@ def get_and_plot_distortion(ny_census: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
-def plot_clusters(ny_census: gpd.GeoDataFrame) -> None:
-    _, ax = plt.subplots(1, figsize=(6, 6))
-    ny_census.plot(
-        column="kmeans_5_label",
-        categorical=True,
-        legend=True,
-        linewidth=0,
-        ax=ax,
-        legend_kwds={"loc": "center left", "bbox_to_anchor": (1, 0.5), "fmt": "{:.0f}"},
-        cmap="Set2",
-    )
-    ax.set_axis_off()
-    plt.show()
-
-
 def calculate_tract_average_areas(ny_census: gpd.GeoDataFrame) -> None:
     # area in km squared
     k5distr = ny_census.groupby("kmeans_5_label").size()
@@ -61,7 +46,7 @@ def get_and_plot_clusters(ny_census: gpd.GeoDataFrame) -> None:
     kmeans = KMeans(n_clusters=5)
     kmeans_5 = kmeans.fit(ny_census[constants.GEO_DEMO_RN])
     ny_census["kmeans_5_label"] = kmeans_5.labels_
-    plot_clusters(ny_census)
+    utils.plot_clusters_choropleth(ny_census, "kmeans_5_label", "Set2")
     calculate_tract_average_areas(ny_census)
     utils.plot_radial_plot(
         ny_census.groupby("kmeans_5_label")[constants.GEO_DEMO_RN].mean()
