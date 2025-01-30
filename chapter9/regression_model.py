@@ -6,6 +6,8 @@ import pandas as pd
 import plotly.express as px
 
 from libpysal import weights
+from mgwr.gwr import GWR, MGWR
+from mgwr.sel_bw import Sel_BW
 from pysal.model import spreg
 
 
@@ -61,9 +63,9 @@ def format_price(manhattan_listings_subset: gpd.GeoDataFrame) -> gpd.GeoDataFram
 
 
 def drop_missing_values(
-    manhattan_listings_subset: gpd.GeoDataFrame,
+    manhattan_listings_subset: gpd.GeoDataFrame, columns: list
 ) -> gpd.GeoDataFrame:
-    for column in ["bedrooms", "beds", "review_scores_rating", "price"]:
+    for column in columns:
         manhattan_listings_subset = manhattan_listings_subset[
             manhattan_listings_subset[column].notna()
         ]
@@ -87,7 +89,9 @@ def get_train_data() -> gpd.GeoDataFrame:
     manhattan_listings_subset = one_hot_encode_room_types(manhattan_listings_subset)
     manhattan_listings_subset = format_price(manhattan_listings_subset)
     manhattan_listings_subset["log_price"] = np.log(manhattan_listings_subset["price"])
-    manhattan_listings_subset = drop_missing_values(manhattan_listings_subset)
+    manhattan_listings_subset = drop_missing_values(
+        manhattan_listings_subset, ["bedrooms", "beds", "review_scores_rating", "price"]
+    )
     return manhattan_listings, manhattan_listings_subset
 
 
@@ -229,6 +233,47 @@ def build_model_and_plot(
     plot_spatial_lag(residuals_neighborhood, manhattan_listings, model)
 
 
+def build_geographical_weigted_regression_model(
+    manhattan_listings: gpd.GeoDataFrame,
+) -> None:
+    manhattan_listings = drop_missing_values(
+        manhattan_listings,
+        ["accommodates", "bedrooms", "beds", "review_scores_rating", "price"],
+    )
+    exp_vars = manhattan_listings[
+        ["accommodates", "bedrooms", "beds", "review_scores_rating"]
+    ].values
+    manhattan_listings = format_price(manhattan_listings)
+    manhattan_listings["log_price"] = np.log(manhattan_listings["price"])
+    y = (manhattan_listings["log_price"].values).reshape((-1, 1))
+    coords = list(zip(manhattan_listings.geometry.x, manhattan_listings.geometry.y))
+    gwr_selector = Sel_BW(coords, y, exp_vars, spherical=True)
+    gwr_bw = gwr_selector.search(bw_min=2)
+    gwr_results = GWR(
+        coords, manhattan_listings[["log_price"]].values, exp_vars, gwr_bw
+    ).fit()
+
+
+def build_geographical_multi_weigted_regression_model(
+    manhattan_listings: gpd.GeoDataFrame,
+) -> None:
+    manhattan_listings = drop_missing_values(
+        manhattan_listings,
+        ["accommodates", "bedrooms", "beds", "review_scores_rating", "price"],
+    )
+    exp_vars = manhattan_listings[
+        ["accommodates", "bedrooms", "beds", "review_scores_rating"]
+    ].values
+    manhattan_listings = format_price(manhattan_listings)
+    manhattan_listings["log_price"] = np.log(manhattan_listings["price"])
+    y = (manhattan_listings["log_price"].values).reshape((-1, 1))
+    coords = list(zip(manhattan_listings.geometry.x, manhattan_listings.geometry.y))
+    selector = Sel_BW(coords, y, exp_vars, multi=True, spherical=True)
+    selector.search(multi_bw_min=[4])
+    mgwr_results = MGWR(coords, y, exp_vars, selector, sigma2_v1=True).fit()
+    breakpoint()
+
+
 if __name__ == "__main__":
     manhattan_listings, manhattan_listings_subset = get_train_data()
     build_model_and_plot(manhattan_listings_subset.copy(), manhattan_listings, M_VARS)
@@ -259,3 +304,7 @@ if __name__ == "__main__":
     build_model_and_plot(
         manhattan_listings_subset.copy(), manhattan_listings, G_M_VARS, True
     )
+
+    build_geographical_weigted_regression_model(manhattan_listings.copy())
+
+    # build_geographical_multi_weigted_regression_model(manhattan_listings.copy())
