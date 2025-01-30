@@ -17,7 +17,7 @@ def plot_radial_plot(cluster_means: pd.DataFrame) -> None:
         )
     fig.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, range=[-2, 5])  # here we can define the range
+            radialaxis=dict(visible=True, range=[-2, 6])  # here we can define the range
         ),
         showlegend=True,
         title="Cluster Radial Plot",
