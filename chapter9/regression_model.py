@@ -48,7 +48,7 @@ def drop_missing_values(
 
 
 def get_train_data() -> gpd.GeoDataFrame:
-    manhattan_listings = gpd.read_file("data/new_york/manhattan_listings.geojson")
+    manhattan_listings = gpd.read_file("data/output/new_york/manhattan_listings.geojson")
     variables = [
         "id",  # Unique identifier for the listing
         "room_type",  # Type of room

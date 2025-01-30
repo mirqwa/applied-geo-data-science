@@ -80,8 +80,8 @@ def get_distances_to_attactions(
     manhattan_listings = manhattan_listings.merge(
         distances_df, left_index=True, right_index=True
     )
-    manhattan_listings.to_csv(
-        "data/output/new_york/manhattan_listings.csv", index=False
+    manhattan_listings.to_file(
+        "data/output/new_york/manhattan_listings.geojson", driver="GeoJSON"
     )
 
 
