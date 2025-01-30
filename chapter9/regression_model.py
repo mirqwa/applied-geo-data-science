@@ -22,6 +22,12 @@ def format_price(manhattan_listings: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return manhattan_listings
 
 
+def drop_missing_values(manhattan_listings: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    for column in ["bedrooms", "beds", "review_scores_rating", "price"]:
+        manhattan_listings = manhattan_listings[manhattan_listings[column].notna()]
+    return manhattan_listings
+
+
 def get_train_data() -> gpd.GeoDataFrame:
     manhattan_listings = gpd.read_file("data/new_york/manhattan_listings.geojson")
     variables = [
@@ -36,6 +42,8 @@ def get_train_data() -> gpd.GeoDataFrame:
     manhattan_listings = manhattan_listings[variables]
     manhattan_listings = one_hot_encode_room_types(manhattan_listings)
     manhattan_listings = format_price(manhattan_listings)
+    manhattan_listings["log_price"] = np.log(manhattan_listings["price"])
+    manhattan_listings = drop_missing_values(manhattan_listings)
 
 
 if __name__ == "__main__":
