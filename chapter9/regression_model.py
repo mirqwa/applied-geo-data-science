@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
+from libpysal import weights
 from pysal.model import spreg
 
 
@@ -65,7 +66,7 @@ def get_train_data() -> gpd.GeoDataFrame:
     return manhattan_listings, manhattan_listings_subset
 
 
-def build_regression_model(manhattan_listings: gpd.GeoDataFrame) -> None:
+def build_regression_model(manhattan_listings: gpd.GeoDataFrame) -> spreg.OLS:
     m_vars = [
         "accommodates",
         "bedrooms",
@@ -146,6 +147,29 @@ def plot_residuals_choropleth(nyc_neighborhoods_residuals: gpd.GeoDataFrame) -> 
     plt.show()
 
 
+def plot_spatial_lag(
+    residuals_neighborhood: pd.DataFrame,
+    manhattan_listings: gpd.GeoDataFrame,
+    ols_m: spreg.OLS,
+) -> None:
+    residuals_neighborhood = residuals_neighborhood.merge(
+        manhattan_listings[["id", "geometry"]], how="left", on="id"
+    )
+    knn = weights.KNN.from_dataframe(residuals_neighborhood, k=5)
+    lag_residual = weights.spatial_lag.lag_spatial(knn, ols_m.u)
+    fig = px.scatter(
+        x=ols_m.u.flatten(),
+        y=lag_residual.flatten(),
+        trendline="ols",
+        width=800,
+        height=800,
+    )
+    fig.update_layout(
+        xaxis_title="Airbnb Residuals", yaxis_title="Spatially Lagged Residuals"
+    )
+    fig.show()
+
+
 if __name__ == "__main__":
     manhattan_listings, manhattan_listings_subset = get_train_data()
     ols_m = build_regression_model(manhattan_listings_subset)
@@ -157,3 +181,4 @@ if __name__ == "__main__":
     )
     plot_residuals_neighborhood(residuals_neighborhood)
     plot_residuals_choropleth(nyc_neighborhoods_residuals)
+    plot_spatial_lag(residuals_neighborhood, manhattan_listings, ols_m)
