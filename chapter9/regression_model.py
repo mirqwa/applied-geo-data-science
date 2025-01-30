@@ -15,6 +15,13 @@ def one_hot_encode_room_types(manhattan_listings: gpd.GeoDataFrame) -> gpd.GeoDa
     return manhattan_listings
 
 
+def format_price(manhattan_listings: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    manhattan_listings["price"] = manhattan_listings["price"].str.replace("$", "")
+    manhattan_listings["price"] = manhattan_listings["price"].str.replace(",", "")
+    manhattan_listings["price"] = manhattan_listings["price"].astype(float)
+    return manhattan_listings
+
+
 def get_train_data() -> gpd.GeoDataFrame:
     manhattan_listings = gpd.read_file("data/new_york/manhattan_listings.geojson")
     variables = [
@@ -28,6 +35,7 @@ def get_train_data() -> gpd.GeoDataFrame:
     ]
     manhattan_listings = manhattan_listings[variables]
     manhattan_listings = one_hot_encode_room_types(manhattan_listings)
+    manhattan_listings = format_price(manhattan_listings)
 
 
 if __name__ == "__main__":
