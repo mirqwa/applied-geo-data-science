@@ -91,7 +91,25 @@ def get_train_data() -> gpd.GeoDataFrame:
     return manhattan_listings, manhattan_listings_subset
 
 
-def build_regression_model(manhattan_listings: gpd.GeoDataFrame, variables: str) -> spreg.OLS:
+def build_spatially_fixed_effects_regression_model(
+    manhattan_listings: gpd.GeoDataFrame, variables: str
+) -> spreg.OLS_Regimes:
+    sfe_m = spreg.OLS_Regimes(
+        manhattan_listings[["log_price"]].values,
+        manhattan_listings[variables].values,
+        manhattan_listings["neighbourhood_cleansed"].tolist(),
+        constant_regi="many",
+        cols2regi=[False] * len(variables),
+        regime_err_sep=False,
+        name_y="log_price",
+        name_x=variables,
+    )
+    return sfe_m
+
+
+def build_regression_model(
+    manhattan_listings: gpd.GeoDataFrame, variables: str
+) -> spreg.OLS:
     ols_m = spreg.OLS(
         manhattan_listings[["log_price"]].values,
         manhattan_listings[variables].values,
@@ -104,15 +122,16 @@ def build_regression_model(manhattan_listings: gpd.GeoDataFrame, variables: str)
 def get_average_neighborhood_residual(
     manhattan_listings: gpd.GeoDataFrame,
     manhattan_listings_subset: gpd.GeoDataFrame,
-    ols_m: spreg.OLS,
+    model: spreg.OLS,
 ) -> tuple:
-    manhattan_listings_subset["ols_m_r"] = ols_m.u
-    manhattan_listings_subset = manhattan_listings_subset.merge(
-        manhattan_listings[["id", "neighbourhood_cleansed"]], how="left", on="id"
-    )
+    manhattan_listings_subset["model_residual"] = model.u
+    if "neighbourhood_cleansed" not in manhattan_listings_subset.columns:
+        manhattan_listings_subset = manhattan_listings_subset.merge(
+            manhattan_listings[["id", "neighbourhood_cleansed"]], how="left", on="id"
+        )
     mean = (
         manhattan_listings_subset.groupby("neighbourhood_cleansed")
-        .ols_m_r.mean()
+        .model_residual.mean()
         .to_frame("neighborhood_residual")
     )
     residuals_neighborhood = manhattan_listings_subset.merge(
@@ -131,7 +150,7 @@ def plot_residuals_neighborhood(residuals_neighborhood: pd.DataFrame) -> None:
     fig = px.violin(
         residuals_neighborhood,
         x="neighbourhood_cleansed",
-        y="ols_m_r",
+        y="model_residual",
         color="neighbourhood_cleansed",
     )
     fig.update_layout(xaxis_title="Neighborhood", yaxis_title="Residuals")
@@ -166,15 +185,15 @@ def plot_residuals_choropleth(nyc_neighborhoods_residuals: gpd.GeoDataFrame) -> 
 def plot_spatial_lag(
     residuals_neighborhood: pd.DataFrame,
     manhattan_listings: gpd.GeoDataFrame,
-    ols_m: spreg.OLS,
+    model: spreg.OLS,
 ) -> None:
     residuals_neighborhood = residuals_neighborhood.merge(
         manhattan_listings[["id", "geometry"]], how="left", on="id"
     )
     knn = weights.KNN.from_dataframe(residuals_neighborhood, k=5)
-    lag_residual = weights.spatial_lag.lag_spatial(knn, ols_m.u)
+    lag_residual = weights.spatial_lag.lag_spatial(knn, model.u)
     fig = px.scatter(
-        x=ols_m.u.flatten(),
+        x=model.u.flatten(),
         y=lag_residual.flatten(),
         trendline="ols",
         width=800,
@@ -187,18 +206,27 @@ def plot_spatial_lag(
 
 
 def build_model_and_plot(
-    manhattan_listings_subset: pd.DataFrame, manhattan_listings: gpd.GeoDataFrame, variables: str
+    manhattan_listings_subset: pd.DataFrame,
+    manhattan_listings: gpd.GeoDataFrame,
+    variables: str,
+    spatial_fixed_model: bool = False,
 ) -> None:
-    ols_m = build_regression_model(manhattan_listings_subset, variables)
+    model = (
+        build_spatially_fixed_effects_regression_model(
+            manhattan_listings_subset, variables
+        )
+        if spatial_fixed_model
+        else build_regression_model(manhattan_listings_subset, variables)
+    )
     (
         residuals_neighborhood,
         nyc_neighborhoods_residuals,
     ) = get_average_neighborhood_residual(
-        manhattan_listings, manhattan_listings_subset, ols_m
+        manhattan_listings, manhattan_listings_subset, model
     )
     plot_residuals_neighborhood(residuals_neighborhood)
     plot_residuals_choropleth(nyc_neighborhoods_residuals)
-    plot_spatial_lag(residuals_neighborhood, manhattan_listings, ols_m)
+    plot_spatial_lag(residuals_neighborhood, manhattan_listings, model)
 
 
 if __name__ == "__main__":
@@ -223,4 +251,11 @@ if __name__ == "__main__":
         how="left",
         on="id",
     )
-    build_model_and_plot(manhattan_listings_subset, manhattan_listings, G_M_VARS)
+    build_model_and_plot(manhattan_listings_subset.copy(), manhattan_listings, G_M_VARS)
+
+    manhattan_listings_subset = manhattan_listings_subset.merge(
+        manhattan_listings[["id", "neighbourhood_cleansed"]], how="left", on="id"
+    )
+    build_model_and_plot(
+        manhattan_listings_subset.copy(), manhattan_listings, G_M_VARS, True
+    )
