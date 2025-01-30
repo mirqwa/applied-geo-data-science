@@ -39,6 +39,10 @@ def get_manhattan_listings() -> gpd.GeoDataFrame:
     manhattan = get_manhattan()
     listings_mask = listings_gdf.within(manhattan.loc[3, "geometry"])
     manhattan_listings = listings_gdf.loc[listings_mask]
+    # saving this, to be used in chapter 9
+    manhattan_listings.to_file(
+        "data/new_york/manhattan_listings.geojson", driver="GeoJSON"
+    )
     return manhattan_listings
 
 
@@ -76,8 +80,8 @@ def get_distances_to_attactions(
     manhattan_listings = manhattan_listings.merge(
         distances_df, left_index=True, right_index=True
     )
-    manhattan_listings.to_csv(
-        "data/output/new_york/manhattan_listings.csv", index=False
+    manhattan_listings.to_file(
+        "data/output/new_york/manhattan_listings.geojson", driver="GeoJSON"
     )
 
 
