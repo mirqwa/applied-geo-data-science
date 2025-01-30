@@ -15,6 +15,7 @@ def fit_model(ny_census: gpd.GeoDataFrame) -> None:
     model.fit(ny_census[constants.GEO_DEMO_RN])
     ny_census["ward5_label"] = model.labels_
     ward5sizes = ny_census.groupby("ward5_label").size()
+    utils.plot_clusters_choropleth(ny_census, "ward5_label", "Set3")
     utils.plot_radial_plot(
         ny_census.groupby("ward5_label")[constants.GEO_DEMO_RN].mean()
     )
