@@ -9,6 +9,29 @@ from libpysal import weights
 from pysal.model import spreg
 
 
+M_VARS = [
+    "accommodates",
+    "bedrooms",
+    "beds",
+    "review_scores_rating",
+    "rt_entire_home_apartment",
+    "rt_private_room",
+    "rt_shared_room",
+]
+G_VARS = [
+    "Central Park",
+    "Central Park Zoo",
+    "Empire State Building",
+    "Statue of Liberty",
+    "Rockeffeller Center",
+    "Chrysler Building",
+    "Times Square",
+    "MoMa",
+    "Charging Bull",
+]
+G_M_VARS = G_VARS + M_VARS
+
+
 def one_hot_encode_room_types(
     manhattan_listings_subset: gpd.GeoDataFrame,
 ) -> gpd.GeoDataFrame:
@@ -48,7 +71,9 @@ def drop_missing_values(
 
 
 def get_train_data() -> gpd.GeoDataFrame:
-    manhattan_listings = gpd.read_file("data/output/new_york/manhattan_listings.geojson")
+    manhattan_listings = gpd.read_file(
+        "data/output/new_york/manhattan_listings.geojson"
+    )
     variables = [
         "id",  # Unique identifier for the listing
         "room_type",  # Type of room
@@ -66,21 +91,12 @@ def get_train_data() -> gpd.GeoDataFrame:
     return manhattan_listings, manhattan_listings_subset
 
 
-def build_regression_model(manhattan_listings: gpd.GeoDataFrame) -> spreg.OLS:
-    m_vars = [
-        "accommodates",
-        "bedrooms",
-        "beds",
-        "review_scores_rating",
-        "rt_entire_home_apartment",
-        "rt_private_room",
-        "rt_shared_room",
-    ]
+def build_regression_model(manhattan_listings: gpd.GeoDataFrame, variables: str) -> spreg.OLS:
     ols_m = spreg.OLS(
         manhattan_listings[["log_price"]].values,
-        manhattan_listings[m_vars].values,
+        manhattan_listings[variables].values,
         name_y="price",
-        name_x=m_vars,
+        name_x=variables,
     )
     return ols_m
 
@@ -170,9 +186,10 @@ def plot_spatial_lag(
     fig.show()
 
 
-if __name__ == "__main__":
-    manhattan_listings, manhattan_listings_subset = get_train_data()
-    ols_m = build_regression_model(manhattan_listings_subset)
+def build_model_and_plot(
+    manhattan_listings_subset: pd.DataFrame, manhattan_listings: gpd.GeoDataFrame, variables: str
+) -> None:
+    ols_m = build_regression_model(manhattan_listings_subset, variables)
     (
         residuals_neighborhood,
         nyc_neighborhoods_residuals,
@@ -182,3 +199,27 @@ if __name__ == "__main__":
     plot_residuals_neighborhood(residuals_neighborhood)
     plot_residuals_choropleth(nyc_neighborhoods_residuals)
     plot_spatial_lag(residuals_neighborhood, manhattan_listings, ols_m)
+
+
+if __name__ == "__main__":
+    manhattan_listings, manhattan_listings_subset = get_train_data()
+    build_model_and_plot(manhattan_listings_subset, manhattan_listings, M_VARS)
+
+    manhattan_listings_subset = manhattan_listings_subset.merge(
+        manhattan_listings[
+            [
+                "id",
+                "Central Park",
+                "Central Park Zoo",
+                "Empire State Building",
+                "Statue of Liberty",
+                "Rockeffeller Center",
+                "Chrysler Building",
+                "Times Square",
+                "MoMa",
+                "Charging Bull",
+            ]
+        ],
+        how="left",
+        on="id",
+    )
