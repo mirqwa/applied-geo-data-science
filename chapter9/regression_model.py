@@ -88,7 +88,7 @@ def get_average_neighborhood_residual(
     manhattan_listings: gpd.GeoDataFrame,
     manhattan_listings_subset: gpd.GeoDataFrame,
     ols_m: spreg.OLS,
-) -> None:
+) -> tuple:
     manhattan_listings_subset["ols_m_r"] = ols_m.u
     manhattan_listings_subset = manhattan_listings_subset.merge(
         manhattan_listings[["id", "neighbourhood_cleansed"]], how="left", on="id"
@@ -101,7 +101,13 @@ def get_average_neighborhood_residual(
     residuals_neighborhood = manhattan_listings_subset.merge(
         mean, how="left", left_on="neighbourhood_cleansed", right_index=True
     ).sort_values("neighborhood_residual")
-    return residuals_neighborhood
+    nyc_neighborhoods = gpd.read_file(
+        "data/new_york/neighborhoods/ZillowNeighborhoods-NY.shp"
+    )
+    nyc_neighborhoods_residuals = nyc_neighborhoods.merge(
+        mean, left_on="Name", right_on="neighbourhood_cleansed"
+    )
+    return residuals_neighborhood, nyc_neighborhoods_residuals
 
 
 def plot_residuals_neighborhood(residuals_neighborhood: pd.DataFrame) -> None:
@@ -118,7 +124,10 @@ def plot_residuals_neighborhood(residuals_neighborhood: pd.DataFrame) -> None:
 if __name__ == "__main__":
     manhattan_listings, manhattan_listings_subset = get_train_data()
     ols_m = build_regression_model(manhattan_listings_subset)
-    residuals_neighborhood = get_average_neighborhood_residual(
+    (
+        residuals_neighborhood,
+        nyc_neighborhoods_residuals,
+    ) = get_average_neighborhood_residual(
         manhattan_listings, manhattan_listings_subset, ols_m
     )
     plot_residuals_neighborhood(residuals_neighborhood)
