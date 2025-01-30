@@ -2,6 +2,7 @@ import geopandas as gpd
 import numpy as np
 
 from pysal.lib import weights
+from libpysal.weights import Queen, KNN
 from sklearn.cluster import AgglomerativeClustering
 
 import constants
@@ -28,7 +29,11 @@ def fit_model(ny_census: gpd.GeoDataFrame, w: weights.weights = None) -> None:
 
 if __name__ == "__main__":
     ny_census = gpd.read_file("data/us_census/ny_census_transformed_and_scaled.geojson")
-    fit_model(ny_census.copy())
-    spatial_w = weights.Queen.from_dataframe(ny_census)
+    # fit_model(ny_census.copy())
+
     # spatially constrained clustering
+    spatial_w = Queen.from_dataframe(ny_census)
     fit_model(ny_census.copy(), spatial_w)
+
+    knn_spatial_w = KNN.from_dataframe(ny_census, k=10)
+    fit_model(ny_census.copy(), knn_spatial_w)
