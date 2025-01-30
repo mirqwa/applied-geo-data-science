@@ -1,6 +1,10 @@
 import geopandas as gpd
 import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.io as pio
 
+from IPython.display import HTML
 from pysal.model import spreg
 
 
@@ -100,9 +104,22 @@ def get_average_neighborhood_residual(
     return residuals_neighborhood
 
 
+def plot_residuals_neighborhood(residuals_neighborhood: pd.DataFrame) -> None:
+    fig = px.violin(
+        residuals_neighborhood,
+        x="neighbourhood_cleansed",
+        y="ols_m_r",
+        color="neighbourhood_cleansed",
+    )
+    fig.update_layout(xaxis_title="Neighborhood", yaxis_title="Residuals")
+    fig.show()
+    HTML(fig.to_html())
+
+
 if __name__ == "__main__":
     manhattan_listings, manhattan_listings_subset = get_train_data()
     ols_m = build_regression_model(manhattan_listings_subset)
     residuals_neighborhood = get_average_neighborhood_residual(
         manhattan_listings, manhattan_listings_subset, ols_m
     )
+    plot_residuals_neighborhood(residuals_neighborhood)
