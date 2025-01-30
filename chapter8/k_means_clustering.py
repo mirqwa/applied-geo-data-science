@@ -78,16 +78,16 @@ def plot_radial_plot(ny_census: gpd.GeoDataFrame) -> None:
         title="Cluster Radial Plot",
         title_x=0.5,
     )
-    plt.show()
+    fig.show()
 
 
 def get_and_plot_clusters(ny_census: gpd.GeoDataFrame) -> None:
     kmeans = KMeans(n_clusters=5)
     kmeans_5 = kmeans.fit(ny_census[constants.GEO_DEMO_RN])
     ny_census["kmeans_5_label"] = kmeans_5.labels_
-    plot_radial_plot(ny_census)
     plot_clusters(ny_census)
     calculate_tract_average_areas(ny_census)
+    plot_radial_plot(ny_census)
 
 
 if __name__ == "__main__":
