@@ -113,7 +113,6 @@ def plot_residuals_neighborhood(residuals_neighborhood: pd.DataFrame) -> None:
     )
     fig.update_layout(xaxis_title="Neighborhood", yaxis_title="Residuals")
     fig.show()
-    HTML(fig.to_html())
 
 
 if __name__ == "__main__":
