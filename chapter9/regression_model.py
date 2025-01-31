@@ -1,3 +1,5 @@
+import warnings
+
 import contextily as cx
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -10,6 +12,8 @@ from mgwr.gwr import GWR, MGWR
 from mgwr.sel_bw import Sel_BW
 from pysal.model import spreg
 
+
+warnings.filterwarnings("ignore")
 
 M_VARS = [
     "accommodates",
@@ -111,9 +115,7 @@ def build_spatially_fixed_effects_regression_model(
     return sfe_m
 
 
-def build_regression_model(
-    manhattan_listings: gpd.GeoDataFrame, variables: str
-) -> spreg.OLS:
+def build_ols_model(manhattan_listings: gpd.GeoDataFrame, variables: str) -> spreg.OLS:
     ols_m = spreg.OLS(
         manhattan_listings[["log_price"]].values,
         manhattan_listings[variables].values,
@@ -124,15 +126,10 @@ def build_regression_model(
 
 
 def get_average_neighborhood_residual(
-    manhattan_listings: gpd.GeoDataFrame,
     manhattan_listings_subset: gpd.GeoDataFrame,
-    model: spreg.OLS,
+    model_residual: spreg.OLS,
 ) -> tuple:
-    manhattan_listings_subset["model_residual"] = model.u
-    if "neighbourhood_cleansed" not in manhattan_listings_subset.columns:
-        manhattan_listings_subset = manhattan_listings_subset.merge(
-            manhattan_listings[["id", "neighbourhood_cleansed"]], how="left", on="id"
-        )
+    manhattan_listings_subset["model_residual"] = model_residual
     mean = (
         manhattan_listings_subset.groupby("neighbourhood_cleansed")
         .model_residual.mean()
@@ -189,15 +186,16 @@ def plot_residuals_choropleth(nyc_neighborhoods_residuals: gpd.GeoDataFrame) -> 
 def plot_spatial_lag(
     residuals_neighborhood: pd.DataFrame,
     manhattan_listings: gpd.GeoDataFrame,
-    model: spreg.OLS,
+    model_residuals: spreg.OLS,
 ) -> None:
-    residuals_neighborhood = residuals_neighborhood.merge(
-        manhattan_listings[["id", "geometry"]], how="left", on="id"
-    )
+    if "geometry" not in residuals_neighborhood.columns:
+        residuals_neighborhood = residuals_neighborhood.merge(
+            manhattan_listings[["id", "geometry"]], how="left", on="id"
+        )
     knn = weights.KNN.from_dataframe(residuals_neighborhood, k=5)
-    lag_residual = weights.spatial_lag.lag_spatial(knn, model.u)
+    lag_residual = weights.spatial_lag.lag_spatial(knn, model_residuals)
     fig = px.scatter(
-        x=model.u.flatten(),
+        x=model_residuals.flatten(),
         y=lag_residual.flatten(),
         trendline="ols",
         width=800,
@@ -220,58 +218,68 @@ def build_model_and_plot(
             manhattan_listings_subset, variables
         )
         if spatial_fixed_model
-        else build_regression_model(manhattan_listings_subset, variables)
+        else build_ols_model(manhattan_listings_subset, variables)
     )
+    print(model.summary)
+    if "neighbourhood_cleansed" not in manhattan_listings_subset.columns:
+        manhattan_listings_subset = manhattan_listings_subset.merge(
+            manhattan_listings[["id", "neighbourhood_cleansed"]], how="left", on="id"
+        )
     (
         residuals_neighborhood,
         nyc_neighborhoods_residuals,
-    ) = get_average_neighborhood_residual(
-        manhattan_listings, manhattan_listings_subset, model
-    )
+    ) = get_average_neighborhood_residual(manhattan_listings_subset, model.u)
     plot_residuals_neighborhood(residuals_neighborhood)
     plot_residuals_choropleth(nyc_neighborhoods_residuals)
-    plot_spatial_lag(residuals_neighborhood, manhattan_listings, model)
+    plot_spatial_lag(residuals_neighborhood, manhattan_listings, model.u)
+
+
+def get_data_for_gwr(manhattan_listings: gpd.GeoDataFrame) -> tuple:
+    manhattan_listings = drop_missing_values(
+        manhattan_listings,
+        ["accommodates", "bedrooms", "beds", "review_scores_rating", "price"],
+    )
+    exp_vars = manhattan_listings[
+        ["accommodates", "bedrooms", "beds", "review_scores_rating"]
+    ].values
+    manhattan_listings = format_price(manhattan_listings)
+    manhattan_listings["log_price"] = np.log(manhattan_listings["price"])
+    y = (manhattan_listings["log_price"].values).reshape((-1, 1))
+    coords = list(zip(manhattan_listings.geometry.x, manhattan_listings.geometry.y))
+    return manhattan_listings, exp_vars, y, coords
 
 
 def build_geographical_weigted_regression_model(
     manhattan_listings: gpd.GeoDataFrame,
+    manhattan_listings_subset: gpd.GeoDataFrame,
+    exp_vars: np.array,
+    y: np.array,
+    coords: list,
 ) -> None:
-    manhattan_listings = drop_missing_values(
-        manhattan_listings,
-        ["accommodates", "bedrooms", "beds", "review_scores_rating", "price"],
-    )
-    exp_vars = manhattan_listings[
-        ["accommodates", "bedrooms", "beds", "review_scores_rating"]
-    ].values
-    manhattan_listings = format_price(manhattan_listings)
-    manhattan_listings["log_price"] = np.log(manhattan_listings["price"])
-    y = (manhattan_listings["log_price"].values).reshape((-1, 1))
-    coords = list(zip(manhattan_listings.geometry.x, manhattan_listings.geometry.y))
     gwr_selector = Sel_BW(coords, y, exp_vars, spherical=True)
     gwr_bw = gwr_selector.search(bw_min=2)
-    gwr_results = GWR(
-        coords, manhattan_listings[["log_price"]].values, exp_vars, gwr_bw
-    ).fit()
+    gwr_results = GWR(coords, y, exp_vars, gwr_bw).fit()
+    (
+        residuals_neighborhood,
+        nyc_neighborhoods_residuals,
+    ) = get_average_neighborhood_residual(
+        manhattan_listings_subset, gwr_results.resid_response
+    )
+    plot_residuals_neighborhood(residuals_neighborhood)
+    plot_residuals_choropleth(nyc_neighborhoods_residuals)
+    plot_spatial_lag(
+        residuals_neighborhood, manhattan_listings, gwr_results.resid_response
+    )
 
 
 def build_geographical_multi_weigted_regression_model(
-    manhattan_listings: gpd.GeoDataFrame,
+    exp_vars: np.array,
+    y: np.array,
+    coords: list,
 ) -> None:
-    manhattan_listings = drop_missing_values(
-        manhattan_listings,
-        ["accommodates", "bedrooms", "beds", "review_scores_rating", "price"],
-    )
-    exp_vars = manhattan_listings[
-        ["accommodates", "bedrooms", "beds", "review_scores_rating"]
-    ].values
-    manhattan_listings = format_price(manhattan_listings)
-    manhattan_listings["log_price"] = np.log(manhattan_listings["price"])
-    y = (manhattan_listings["log_price"].values).reshape((-1, 1))
-    coords = list(zip(manhattan_listings.geometry.x, manhattan_listings.geometry.y))
     selector = Sel_BW(coords, y, exp_vars, multi=True, spherical=True)
     selector.search(multi_bw_min=[4])
     mgwr_results = MGWR(coords, y, exp_vars, selector, sigma2_v1=True).fit()
-    breakpoint()
 
 
 if __name__ == "__main__":
@@ -305,6 +313,12 @@ if __name__ == "__main__":
         manhattan_listings_subset.copy(), manhattan_listings, G_M_VARS, True
     )
 
-    build_geographical_weigted_regression_model(manhattan_listings.copy())
+    manhattan_listings_subset, exp_vars, y, coords = get_data_for_gwr(
+        manhattan_listings.copy()
+    )
 
-    # build_geographical_multi_weigted_regression_model(manhattan_listings.copy())
+    build_geographical_weigted_regression_model(
+        manhattan_listings, manhattan_listings_subset, exp_vars, y, coords
+    )
+
+    # build_geographical_multi_weigted_regression_model(exp_vars, y, coords)
