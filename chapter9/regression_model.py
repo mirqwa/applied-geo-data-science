@@ -1,3 +1,5 @@
+import warnings
+
 import contextily as cx
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -10,6 +12,8 @@ from mgwr.gwr import GWR, MGWR
 from mgwr.sel_bw import Sel_BW
 from pysal.model import spreg
 
+
+warnings.filterwarnings("ignore")
 
 M_VARS = [
     "accommodates",
@@ -222,6 +226,7 @@ def build_model_and_plot(
         if spatial_fixed_model
         else build_ols_model(manhattan_listings_subset, variables)
     )
+    print(model.summary)
     (
         residuals_neighborhood,
         nyc_neighborhoods_residuals,
