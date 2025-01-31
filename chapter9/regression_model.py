@@ -252,7 +252,9 @@ def get_data_for_gwr(manhattan_listings: gpd.GeoDataFrame) -> tuple:
 
 
 def build_geographical_weigted_regression_model(
-    exp_vars: np.array, y: np.array, coords: list
+    exp_vars: np.array,
+    y: np.array,
+    coords: list,
 ) -> None:
     gwr_selector = Sel_BW(coords, y, exp_vars, spherical=True)
     gwr_bw = gwr_selector.search(bw_min=2)
@@ -260,23 +262,13 @@ def build_geographical_weigted_regression_model(
 
 
 def build_geographical_multi_weigted_regression_model(
-    manhattan_listings: gpd.GeoDataFrame,
+    exp_vars: np.array,
+    y: np.array,
+    coords: list,
 ) -> None:
-    manhattan_listings = drop_missing_values(
-        manhattan_listings,
-        ["accommodates", "bedrooms", "beds", "review_scores_rating", "price"],
-    )
-    exp_vars = manhattan_listings[
-        ["accommodates", "bedrooms", "beds", "review_scores_rating"]
-    ].values
-    manhattan_listings = format_price(manhattan_listings)
-    manhattan_listings["log_price"] = np.log(manhattan_listings["price"])
-    y = (manhattan_listings["log_price"].values).reshape((-1, 1))
-    coords = list(zip(manhattan_listings.geometry.x, manhattan_listings.geometry.y))
     selector = Sel_BW(coords, y, exp_vars, multi=True, spherical=True)
     selector.search(multi_bw_min=[4])
     mgwr_results = MGWR(coords, y, exp_vars, selector, sigma2_v1=True).fit()
-    breakpoint()
 
 
 if __name__ == "__main__":
@@ -314,4 +306,4 @@ if __name__ == "__main__":
 
     build_geographical_weigted_regression_model(exp_vars, y, coords)
 
-    # build_geographical_multi_weigted_regression_model(manhattan_listings.copy())
+    # build_geographical_multi_weigted_regression_model(exp_vars, y, coords)
