@@ -111,7 +111,7 @@ def build_spatially_fixed_effects_regression_model(
     return sfe_m
 
 
-def build_regression_model(
+def build_ols_model(
     manhattan_listings: gpd.GeoDataFrame, variables: str
 ) -> spreg.OLS:
     ols_m = spreg.OLS(
@@ -220,7 +220,7 @@ def build_model_and_plot(
             manhattan_listings_subset, variables
         )
         if spatial_fixed_model
-        else build_regression_model(manhattan_listings_subset, variables)
+        else build_ols_model(manhattan_listings_subset, variables)
     )
     (
         residuals_neighborhood,
