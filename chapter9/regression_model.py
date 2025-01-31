@@ -115,9 +115,7 @@ def build_spatially_fixed_effects_regression_model(
     return sfe_m
 
 
-def build_ols_model(
-    manhattan_listings: gpd.GeoDataFrame, variables: str
-) -> spreg.OLS:
+def build_ols_model(manhattan_listings: gpd.GeoDataFrame, variables: str) -> spreg.OLS:
     ols_m = spreg.OLS(
         manhattan_listings[["log_price"]].values,
         manhattan_listings[variables].values,
@@ -238,9 +236,7 @@ def build_model_and_plot(
     plot_spatial_lag(residuals_neighborhood, manhattan_listings, model)
 
 
-def build_geographical_weigted_regression_model(
-    manhattan_listings: gpd.GeoDataFrame,
-) -> None:
+def get_data_for_gwr(manhattan_listings: gpd.GeoDataFrame) -> tuple:
     manhattan_listings = drop_missing_values(
         manhattan_listings,
         ["accommodates", "bedrooms", "beds", "review_scores_rating", "price"],
@@ -252,11 +248,15 @@ def build_geographical_weigted_regression_model(
     manhattan_listings["log_price"] = np.log(manhattan_listings["price"])
     y = (manhattan_listings["log_price"].values).reshape((-1, 1))
     coords = list(zip(manhattan_listings.geometry.x, manhattan_listings.geometry.y))
+    return exp_vars, y, coords
+
+
+def build_geographical_weigted_regression_model(
+    exp_vars: np.array, y: np.array, coords: list
+) -> None:
     gwr_selector = Sel_BW(coords, y, exp_vars, spherical=True)
     gwr_bw = gwr_selector.search(bw_min=2)
-    gwr_results = GWR(
-        coords, manhattan_listings[["log_price"]].values, exp_vars, gwr_bw
-    ).fit()
+    gwr_results = GWR(coords, y, exp_vars, gwr_bw).fit()
 
 
 def build_geographical_multi_weigted_regression_model(
@@ -310,6 +310,8 @@ if __name__ == "__main__":
         manhattan_listings_subset.copy(), manhattan_listings, G_M_VARS, True
     )
 
-    build_geographical_weigted_regression_model(manhattan_listings.copy())
+    exp_vars, y, coords = get_data_for_gwr(manhattan_listings.copy())
+
+    build_geographical_weigted_regression_model(exp_vars, y, coords)
 
     # build_geographical_multi_weigted_regression_model(manhattan_listings.copy())
