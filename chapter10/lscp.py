@@ -22,6 +22,7 @@ def plot_data(data: list[dict]) -> None:
             zorder=data_to_plot["zorder"],
             label=data_to_plot["label"],
             marker=data_to_plot.get("marker"),
+            markersize=data_to_plot.get("markersize"),
         )
     cx.add_basemap(ax, crs=data_to_plot_wm.crs, zoom=12)
     ax.set_axis_off()
@@ -121,14 +122,16 @@ if __name__ == "__main__":
                 "alpha": 1,
                 "zorder": 2,
                 "marker": "o",
+                "markersize": 20,
                 "label": "Patients needing care $n=$150)",
             },
             {
                 "gdf": medical_center_locs,
-                "color": "blue",
+                "color": "red",
                 "alpha": 1,
                 "zorder": 3,
                 "marker": "+",
+                "markersize": 200,
                 "label": "Medical Centers ($n=$4)",
             },
         ]
