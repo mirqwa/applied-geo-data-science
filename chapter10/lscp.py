@@ -4,10 +4,10 @@ import osmnx as ox
 import pulp
 
 
-def get_network_data() -> tuple[gpd.GeoDataFrame]:
+def get_network_data(use_local_data: bool = False) -> tuple[gpd.GeoDataFrame]:
     nodes_path = "data/washington/network_nodes.geojson"
     edges_path = "data/washington/network_edges.geojson"
-    if Path(nodes_path).is_file() and Path(edges_path).is_file():
+    if use_local_data and Path(nodes_path).is_file() and Path(edges_path).is_file():
         return gpd.read_file(nodes_path), gpd.read_file(edges_path)
     G = ox.graph_from_place("Washington, DC", network_type="drive")
     gdf_nodes, gdf_edges = ox.graph_to_gdfs(G)
