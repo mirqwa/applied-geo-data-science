@@ -8,6 +8,7 @@ import pulp
 import spaghetti
 
 from libpysal import weights
+from spopt.locate.util import simulated_geo_points
 
 
 def plot_street(gdf_edges: gpd.GeoDataFrame) -> None:
@@ -46,7 +47,7 @@ def get_edges_subset(gdf_edges: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gdf_edges_clipped_p
 
 
-def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> spaghetti.Network:
+def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> tuple:
     ntw = spaghetti.Network(in_data=gdf_edges)
     streets_gpd = spaghetti.element_as_gdf(ntw, arcs=True)
     street_buffer = gpd.GeoDataFrame(
@@ -54,20 +55,22 @@ def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> spaghetti.Network:
         crs=streets_gpd.crs,
         columns=["geometry"],
     )
-    return street_buffer
+    return street_buffer, streets_gpd
+
+
+def simulate_patients_and_medical_centers(street_buffer: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame]:
+    patient_locs = simulated_geo_points(street_buffer, needed=150, seed=32)
+    medical_center_locs = simulated_geo_points(street_buffer, needed=4, seed=32)
+    return patient_locs, medical_center_locs
 
 
 if __name__ == "__main__":
-    patients = 150
-    medical_centers = 4
-    service_area = 5500
-
-    patient_seed = 54321
-    medical_centers_seed = 54321
-
     solver = pulp.PULP_CBC_CMD(msg=False, warmStart=True)
     _, gdf_edges = get_network_data(True)
     plot_street(gdf_edges)
     gdf_edges_clipped_p = get_edges_subset(gdf_edges)
     plot_street(gdf_edges_clipped_p)
-    street_buffer = convert_gpd_to_spaghetti(gdf_edges_clipped_p)
+    street_buffer, streets_gpd = convert_gpd_to_spaghetti(gdf_edges_clipped_p)
+    patient_locs, medical_center_locs = simulate_patients_and_medical_centers(
+        street_buffer
+    )
