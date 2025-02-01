@@ -24,7 +24,9 @@ def plot_data(data: list[dict]) -> None:
             marker=data_to_plot.get("marker"),
             markersize=data_to_plot.get("markersize"),
         )
-    cx.add_basemap(ax, crs=data_to_plot_wm.crs, zoom=12)
+    cx.add_basemap(
+        ax, crs=data_to_plot_wm.crs, zoom=12, source=cx.providers.OpenStreetMap.Mapnik
+    )
     ax.set_axis_off()
     plt.legend(loc="upper right", bbox_to_anchor=(0, 1))
     plt.show()
@@ -72,11 +74,11 @@ def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> tuple:
 def simulate_patients_and_medical_centers(
     street_buffer: gpd.GeoDataFrame, ntw: spaghetti.Network
 ) -> tuple[gpd.GeoDataFrame]:
-    patient_locs = simulated_geo_points(street_buffer, needed=150, seed=654321)
+    patient_locs = simulated_geo_points(street_buffer, needed=150, seed=12345)
     ntw.snapobservations(patient_locs, "patients", attribute=True)
     patient_locs = spaghetti.element_as_gdf(ntw, pp_name="patients", snapped=True)
     patient_locs.crs = "EPSG:5070"
-    medical_center_locs = simulated_geo_points(street_buffer, needed=4, seed=654321)
+    medical_center_locs = simulated_geo_points(street_buffer, needed=4, seed=12345)
     ntw.snapobservations(medical_center_locs, "medical_centers", attribute=True)
     medical_center_locs = spaghetti.element_as_gdf(
         ntw, pp_name="medical_centers", snapped=True
