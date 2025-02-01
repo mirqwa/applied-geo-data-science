@@ -53,7 +53,11 @@ def get_serviced_points_and_selected_sites(lscp_from_cost_matrix) -> tuple[list]
 
 
 def plot_serving_locations(
-    ax, medical_center_locs, serviced_points, legend_elements, colors_ops
+    ax: plt.Axes,
+    medical_center_locs: gpd.GeoDataFrame,
+    serviced_points: list,
+    legend_elements: list,
+    colors_ops: dict,
 ):
     for i in range(len(serviced_points)):
         gdf = gpd.GeoDataFrame(serviced_points[i])
@@ -94,7 +98,12 @@ def plot_serving_locations(
         )
 
 
-def plot_unselected_locations(ax, medical_center_locs, selected_sites, legend_elements):
+def plot_unselected_locations(
+    ax: plt.Axes,
+    medical_center_locs: gpd.GeoDataFrame,
+    selected_sites: list,
+    legend_elements: list,
+):
     mc_not_selected = medical_center_locs.drop(selected_sites)
     mc_not_selected = mc_not_selected.to_crs(epsg=3857)
     mc_not_selected.plot(ax=ax, color="darkgrey", marker="P", markersize=80, zorder=3)
@@ -111,6 +120,7 @@ def plot_unselected_locations(ax, medical_center_locs, selected_sites, legend_el
 
 
 def plot_optimal_solution(
+    medical_center_locs: gpd.GeoDataFrame,
     serviced_points: list,
     selected_sites: list,
     streets_gpd: gpd.GeoDataFrame,
@@ -290,4 +300,6 @@ if __name__ == "__main__":
     serviced_points, selected_sites = get_serviced_points_and_selected_sites(
         lscp_from_cost_matrix
     )
-    plot_optimal_solution(serviced_points, selected_sites, streets_gpd)
+    plot_optimal_solution(
+        medical_center_locs, serviced_points, selected_sites, streets_gpd
+    )
