@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import osmnx as ox
 import pulp
 
+from libpysal import weights
+
 
 def plot_nodes_and_edges(
     gdf_nodes: gpd.GeoDataFrame, gdf_edges: gpd.GeoDataFrame
@@ -34,27 +36,10 @@ def get_network_data(use_local_data: bool = False) -> tuple[gpd.GeoDataFrame]:
 
 def get_edges_subset(gdf_edges: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf_edges.reset_index(inplace=True)
-    DC_BGs = gpd.read_file(
-        "data/tiger/TIGER2019/tl_2019_11_tract.zip", compression="zip"
-    )
-    DC_BGs_Sel = DC_BGs[
-        DC_BGs["TRACTCE"].isin(
-            [
-                "980000",
-                "010202",
-                "005900",
-                "000102",
-                "000202",
-                "010800",
-                "005801",
-                "005802",
-                "010500",
-                "005602",
-                "006600",
-                "008200",
-            ]
-        )
-    ]
+    DC_BGs = gpd.read_file("data/tiger/TIGER2019/tl_2019_11_tract.zip")
+    knn = weights.KNN.from_dataframe(DC_BGs, k=10)
+    neighboring_tracts = [150] + list(knn[150].keys())
+    DC_BGs_Sel = DC_BGs.iloc[neighboring_tracts]
     DC_BGs_Sel_D = DC_BGs_Sel.dissolve()
     DC_BGs_Sel_D = DC_BGs_Sel_D.to_crs("EPSG:4326")
     mask = gdf_edges.within(DC_BGs_Sel_D.loc[0, "geometry"])
