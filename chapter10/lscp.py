@@ -15,9 +15,16 @@ def plot_data(data: list[dict]) -> None:
     _, ax = plt.subplots(figsize=(15, 15))
     for data_to_plot in data:
         data_to_plot_wm = data_to_plot["gdf"].to_crs(epsg=3857)
-        data_to_plot_wm.plot(ax=ax, alpha=0.5, color=data_to_plot["color"])
+        data_to_plot_wm.plot(
+            ax=ax,
+            color=data_to_plot["color"],
+            alpha=data_to_plot["alpha"],
+            zorder=data_to_plot["zorder"],
+            label=data_to_plot["label"],
+        )
     cx.add_basemap(ax, crs=data_to_plot_wm.crs, zoom=12)
     ax.set_axis_off()
+    plt.legend(loc="upper right", bbox_to_anchor=(0, 1))
     plt.show()
 
 
@@ -51,6 +58,7 @@ def get_edges_subset(gdf_edges: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> tuple:
     ntw = spaghetti.Network(in_data=gdf_edges)
     streets_gpd = spaghetti.element_as_gdf(ntw, arcs=True)
+    streets_gpd.crs = "EPSG:5070"
     street_buffer = gpd.GeoDataFrame(
         gpd.GeoSeries(streets_gpd["geometry"].buffer(10).unary_union),
         crs=streets_gpd.crs,
@@ -70,10 +78,55 @@ def simulate_patients_and_medical_centers(
 if __name__ == "__main__":
     solver = pulp.PULP_CBC_CMD(msg=False, warmStart=True)
     _, gdf_edges = get_network_data(True)
-    plot_data([{"gdf": gdf_edges, "color": "black"}])
+    plot_data(
+        [
+            {
+                "gdf": gdf_edges,
+                "color": "blue",
+                "alpha": 0.5,
+                "zorder": 1,
+                "label": "Street Grid",
+            }
+        ]
+    )
     gdf_edges_clipped_p = get_edges_subset(gdf_edges)
-    plot_data([{"gdf": gdf_edges_clipped_p, "color": "black"}])
+    plot_data(
+        [
+            {
+                "gdf": gdf_edges_clipped_p,
+                "color": "blue",
+                "alpha": 0.5,
+                "zorder": 1,
+                "label": "Street Grid",
+            }
+        ]
+    )
     street_buffer, streets_gpd = convert_gpd_to_spaghetti(gdf_edges_clipped_p)
     patient_locs, medical_center_locs = simulate_patients_and_medical_centers(
         street_buffer
+    )
+    plot_data(
+        [
+            {
+                "gdf": streets_gpd,
+                "color": "blue",
+                "alpha": 0.5,
+                "zorder": 1,
+                "label": "Street Grid",
+            },
+            {
+                "gdf": patient_locs,
+                "color": "green",
+                "alpha": 1,
+                "zorder": 2,
+                "label": "Patients needing care $n=$150)",
+            },
+            {
+                "gdf": medical_center_locs,
+                "color": "blue",
+                "alpha": 1,
+                "zorder": 3,
+                "label": "Medical Centers ($n=$4)",
+            },
+        ]
     )
