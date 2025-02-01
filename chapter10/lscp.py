@@ -5,19 +5,16 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import osmnx as ox
 import pulp
+import spaghetti
 
 from libpysal import weights
 
 
-def plot_nodes_and_edges(
-    gdf_nodes: gpd.GeoDataFrame, gdf_edges: gpd.GeoDataFrame
-) -> None:
+def plot_street(gdf_edges: gpd.GeoDataFrame) -> None:
     _, ax = plt.subplots(figsize=(15, 15))
-    gdf_nodes_wm = gdf_nodes.to_crs(epsg=3857)
-    gdf_nodes_wm.plot(ax=ax, alpha=0.5, edgecolor="k")
     gdf_edges_wm = gdf_edges.to_crs(epsg=3857)
     gdf_edges_wm.plot(ax=ax, alpha=0.5, color="red", edgecolor="k")
-    cx.add_basemap(ax, crs=gdf_nodes_wm.crs, zoom=12)
+    cx.add_basemap(ax, crs=gdf_edges_wm.crs, zoom=12)
     ax.set_axis_off()
     plt.show()
 
@@ -49,6 +46,17 @@ def get_edges_subset(gdf_edges: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gdf_edges_clipped_p
 
 
+def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> spaghetti.Network:
+    ntw = spaghetti.Network(in_data=gdf_edges)
+    streets_gpd = spaghetti.element_as_gdf(ntw, arcs=True)
+    street_buffer = gpd.GeoDataFrame(
+        gpd.GeoSeries(streets_gpd["geometry"].buffer(10).unary_union),
+        crs=streets_gpd.crs,
+        columns=["geometry"],
+    )
+    return street_buffer
+
+
 if __name__ == "__main__":
     patients = 150
     medical_centers = 4
@@ -58,7 +66,8 @@ if __name__ == "__main__":
     medical_centers_seed = 54321
 
     solver = pulp.PULP_CBC_CMD(msg=False, warmStart=True)
-    gdf_nodes, gdf_edges = get_network_data(True)
-    plot_nodes_and_edges(gdf_nodes, gdf_edges)
+    _, gdf_edges = get_network_data(True)
+    plot_street(gdf_edges)
     gdf_edges_clipped_p = get_edges_subset(gdf_edges)
-    plot_nodes_and_edges(gdf_nodes, gdf_edges_clipped_p)
+    plot_street(gdf_edges_clipped_p)
+    street_buffer = convert_gpd_to_spaghetti(gdf_edges_clipped_p)
