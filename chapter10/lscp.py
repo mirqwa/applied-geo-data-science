@@ -14,9 +14,10 @@ from spopt.locate.coverage import LSCP
 from spopt.locate.util import simulated_geo_points
 
 
-TRACTS = 10
-MEDICAL_CENTERS = 4
-PATIENTS = 150
+TRACTS = 3
+MEDICAL_CENTERS = 2
+PATIENTS = 20
+SERVICE_AREA = 3000
 
 
 def plot_data(data: list[dict]) -> None:
@@ -40,16 +41,7 @@ def plot_data(data: list[dict]) -> None:
     plt.show()
 
 
-def plot_serving_points(lscp_from_cost_matrix, streets_gpd) -> None:
-    colors_arr = [
-        "darkslateblue",
-        "forestgreen",
-        "firebrick",
-        "peachpuff",
-        "saddlebrown",
-        "cornflowerblue",
-    ]
-    colors_ops = {f"y{i}": colors_arr[i] for i in range(len(colors_arr))}
+def get_serviced_points_and_selected_sites(lscp_from_cost_matrix) -> tuple[list]:
     serviced_points = []
     selected_sites = []
     for i in range(MEDICAL_CENTERS):
@@ -57,19 +49,10 @@ def plot_serving_points(lscp_from_cost_matrix, streets_gpd) -> None:
             geom = patient_locs.iloc[lscp_from_cost_matrix.fac2cli[i]]["geometry"]
             serviced_points.append(geom)
             selected_sites.append(i)
-    fig, ax = plt.subplots(figsize=(6, 6))
-    legend_elements = []
+    return serviced_points, selected_sites
 
-    # Plot the street network
-    streets_gpd.plot(ax=ax, alpha=1, color="lightblue", zorder=1)
-    legend_elements.append(
-        mlines.Line2D(
-            [],
-            [],
-            color="lightblue",
-            label="streets",
-        )
-    )
+
+def plot_serving_locations(ax, serviced_points, legend_elements, colors_ops):
     for i in range(len(serviced_points)):
         gdf = gpd.GeoDataFrame(serviced_points[i])
 
@@ -106,6 +89,36 @@ def plot_serving_points(lscp_from_cost_matrix, streets_gpd) -> None:
                 label=f"y{selected_sites[i]} medical center selected",
             )
         )
+
+
+def plot_optimal_solution(
+    serviced_points: list,
+    selected_sites: list,
+    streets_gpd: gpd.GeoDataFrame,
+) -> None:
+    colors_arr = [
+        "darkslateblue",
+        "forestgreen",
+        "firebrick",
+        "peachpuff",
+        "saddlebrown",
+        "cornflowerblue",
+    ]
+    colors_ops = {f"y{i}": colors_arr[i] for i in range(len(colors_arr))}
+    _, ax = plt.subplots(figsize=(6, 6))
+    legend_elements = []
+
+    # Plot the street network
+    streets_gpd.plot(ax=ax, alpha=1, color="lightblue", zorder=1)
+    legend_elements.append(
+        mlines.Line2D(
+            [],
+            [],
+            color="lightblue",
+            label="streets",
+        )
+    )
+    plot_serving_locations(ax, serviced_points, legend_elements, colors_ops)
     # Plot locations of unselected medical centers
     mc_not_selected = medical_center_locs.drop(selected_sites)
     mc_not_selected.plot(ax=ax, color="darkgrey", marker="P", markersize=80, zorder=3)
@@ -192,8 +205,7 @@ def get_the_serving_locations_for_patients(ntw: spaghetti.Network):
         sourcepattern=ntw.pointpatterns["patients"],
         destpattern=ntw.pointpatterns["medical_centers"],
     )
-    service_area = 5500
-    lscp_from_cost_matrix = LSCP.from_cost_matrix(cost_matrix, service_area)
+    lscp_from_cost_matrix = LSCP.from_cost_matrix(cost_matrix, SERVICE_AREA)
     solver = pulp.PULP_CBC_CMD(msg=False, warmStart=True)
     lscp_from_cost_matrix = lscp_from_cost_matrix.solve(solver)
     lscp_from_cost_matrix.facility_client_array()
@@ -259,4 +271,7 @@ if __name__ == "__main__":
         ]
     )
     lscp_from_cost_matrix = get_the_serving_locations_for_patients(ntw)
-    plot_serving_points(lscp_from_cost_matrix, streets_gpd)
+    serviced_points, selected_sites = get_serviced_points_and_selected_sites(
+        lscp_from_cost_matrix
+    )
+    plot_optimal_solution(serviced_points, selected_sites, streets_gpd)
