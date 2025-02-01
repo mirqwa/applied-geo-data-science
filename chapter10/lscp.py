@@ -21,6 +21,7 @@ def plot_data(data: list[dict]) -> None:
             alpha=data_to_plot["alpha"],
             zorder=data_to_plot["zorder"],
             label=data_to_plot["label"],
+            marker=data_to_plot.get("marker"),
         )
     cx.add_basemap(ax, crs=data_to_plot_wm.crs, zoom=12)
     ax.set_axis_off()
@@ -60,7 +61,7 @@ def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> tuple:
     streets_gpd = spaghetti.element_as_gdf(ntw, arcs=True)
     streets_gpd.crs = "EPSG:5070"
     street_buffer = gpd.GeoDataFrame(
-        gpd.GeoSeries(streets_gpd["geometry"].buffer(10).unary_union),
+        gpd.GeoSeries(streets_gpd["geometry"].buffer(10).union_all()),
         crs=streets_gpd.crs,
         columns=["geometry"],
     )
@@ -70,8 +71,8 @@ def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> tuple:
 def simulate_patients_and_medical_centers(
     street_buffer: gpd.GeoDataFrame,
 ) -> tuple[gpd.GeoDataFrame]:
-    patient_locs = simulated_geo_points(street_buffer, needed=150, seed=32)
-    medical_center_locs = simulated_geo_points(street_buffer, needed=4, seed=32)
+    patient_locs = simulated_geo_points(street_buffer, needed=150, seed=54321)
+    medical_center_locs = simulated_geo_points(street_buffer, needed=4, seed=54321)
     return patient_locs, medical_center_locs
 
 
@@ -119,6 +120,7 @@ if __name__ == "__main__":
                 "color": "green",
                 "alpha": 1,
                 "zorder": 2,
+                "marker": "o",
                 "label": "Patients needing care $n=$150)",
             },
             {
@@ -126,6 +128,7 @@ if __name__ == "__main__":
                 "color": "blue",
                 "alpha": 1,
                 "zorder": 3,
+                "marker": "+",
                 "label": "Medical Centers ($n=$4)",
             },
         ]
