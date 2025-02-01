@@ -8,6 +8,7 @@ import pulp
 import spaghetti
 
 from libpysal import weights
+from spopt.locate.coverage import LSCP
 from spopt.locate.util import simulated_geo_points
 
 
@@ -87,8 +88,20 @@ def simulate_patients_and_medical_centers(
     return patient_locs, medical_center_locs
 
 
-if __name__ == "__main__":
+def get_the_serving_locations_for_patients(ntw: spaghetti.Network):
+    cost_matrix = ntw.allneighbordistances(
+        sourcepattern=ntw.pointpatterns["patients"],
+        destpattern=ntw.pointpatterns["medical_centers"],
+    )
+    service_area = 5500
+    lscp_from_cost_matrix = LSCP.from_cost_matrix(cost_matrix, service_area)
     solver = pulp.PULP_CBC_CMD(msg=False, warmStart=True)
+    lscp_from_cost_matrix = lscp_from_cost_matrix.solve(solver)
+    lscp_from_cost_matrix.facility_client_array()
+    return lscp_from_cost_matrix
+
+
+if __name__ == "__main__":
     _, gdf_edges = get_network_data(True)
     plot_data(
         [
@@ -146,3 +159,4 @@ if __name__ == "__main__":
             },
         ]
     )
+    lscp_from_cost_matrix = get_the_serving_locations_for_patients(ntw)
