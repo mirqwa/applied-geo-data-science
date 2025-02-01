@@ -57,6 +57,7 @@ def plot_serving_locations(
 ):
     for i in range(len(serviced_points)):
         gdf = gpd.GeoDataFrame(serviced_points[i])
+        gdf = gdf.to_crs(epsg=3857)
 
         l = f"y{selected_sites[i]}"
 
@@ -95,6 +96,7 @@ def plot_serving_locations(
 
 def plot_unselected_locations(ax, medical_center_locs, selected_sites, legend_elements):
     mc_not_selected = medical_center_locs.drop(selected_sites)
+    mc_not_selected = mc_not_selected.to_crs(epsg=3857)
     mc_not_selected.plot(ax=ax, color="darkgrey", marker="P", markersize=80, zorder=3)
     legend_elements.append(
         mlines.Line2D(
@@ -126,7 +128,8 @@ def plot_optimal_solution(
     legend_elements = []
 
     # Plot the street network
-    streets_gpd.plot(ax=ax, alpha=1, color="lightblue", zorder=1)
+    streets_gpd_wm = streets_gpd.to_crs(epsg=3857)
+    streets_gpd_wm.plot(ax=ax, alpha=1, color="lightblue", zorder=1)
     legend_elements.append(
         mlines.Line2D(
             [],
@@ -140,6 +143,11 @@ def plot_optimal_solution(
     )
     # Plot locations of unselected medical centers
     plot_unselected_locations(ax, medical_center_locs, selected_sites, legend_elements)
+
+    cx.add_basemap(
+        ax, crs=streets_gpd_wm.crs, zoom=12, source=cx.providers.OpenStreetMap.Mapnik
+    )
+    ax.set_axis_off()
 
     plt.title("LSCP - Cost Matrix Solution", fontweight="bold")
     plt.legend(
