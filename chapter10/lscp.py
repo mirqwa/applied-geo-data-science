@@ -66,14 +66,22 @@ def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> tuple:
         crs=streets_gpd.crs,
         columns=["geometry"],
     )
-    return street_buffer, streets_gpd
+    return street_buffer, streets_gpd, ntw
 
 
 def simulate_patients_and_medical_centers(
-    street_buffer: gpd.GeoDataFrame,
+    street_buffer: gpd.GeoDataFrame, ntw: spaghetti.Network
 ) -> tuple[gpd.GeoDataFrame]:
-    patient_locs = simulated_geo_points(street_buffer, needed=150, seed=54321)
-    medical_center_locs = simulated_geo_points(street_buffer, needed=4, seed=54321)
+    patient_locs = simulated_geo_points(street_buffer, needed=150, seed=654321)
+    ntw.snapobservations(patient_locs, "patients", attribute=True)
+    patient_locs = spaghetti.element_as_gdf(ntw, pp_name="patients", snapped=True)
+    patient_locs.crs = "EPSG:5070"
+    medical_center_locs = simulated_geo_points(street_buffer, needed=4, seed=654321)
+    ntw.snapobservations(medical_center_locs, "medical_centers", attribute=True)
+    medical_center_locs = spaghetti.element_as_gdf(
+        ntw, pp_name="medical_centers", snapped=True
+    )
+    medical_center_locs.crs = "EPSG:5070"
     return patient_locs, medical_center_locs
 
 
@@ -103,9 +111,9 @@ if __name__ == "__main__":
             }
         ]
     )
-    street_buffer, streets_gpd = convert_gpd_to_spaghetti(gdf_edges_clipped_p)
+    street_buffer, streets_gpd, ntw = convert_gpd_to_spaghetti(gdf_edges_clipped_p)
     patient_locs, medical_center_locs = simulate_patients_and_medical_centers(
-        street_buffer
+        street_buffer, ntw
     )
     plot_data(
         [
