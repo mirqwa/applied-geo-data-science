@@ -52,7 +52,9 @@ def get_serviced_points_and_selected_sites(lscp_from_cost_matrix) -> tuple[list]
     return serviced_points, selected_sites
 
 
-def plot_serving_locations(ax, serviced_points, legend_elements, colors_ops):
+def plot_serving_locations(
+    ax, medical_center_locs, serviced_points, legend_elements, colors_ops
+):
     for i in range(len(serviced_points)):
         gdf = gpd.GeoDataFrame(serviced_points[i])
 
@@ -91,6 +93,21 @@ def plot_serving_locations(ax, serviced_points, legend_elements, colors_ops):
         )
 
 
+def plot_unselected_locations(ax, medical_center_locs, selected_sites, legend_elements):
+    mc_not_selected = medical_center_locs.drop(selected_sites)
+    mc_not_selected.plot(ax=ax, color="darkgrey", marker="P", markersize=80, zorder=3)
+    legend_elements.append(
+        mlines.Line2D(
+            [],
+            [],
+            color="brown",
+            marker="P",
+            linewidth=0,
+            label=f"Medical Centers Not Selected ($n$={len(mc_not_selected)})",
+        )
+    )
+
+
 def plot_optimal_solution(
     serviced_points: list,
     selected_sites: list,
@@ -118,20 +135,11 @@ def plot_optimal_solution(
             label="streets",
         )
     )
-    plot_serving_locations(ax, serviced_points, legend_elements, colors_ops)
-    # Plot locations of unselected medical centers
-    mc_not_selected = medical_center_locs.drop(selected_sites)
-    mc_not_selected.plot(ax=ax, color="darkgrey", marker="P", markersize=80, zorder=3)
-    legend_elements.append(
-        mlines.Line2D(
-            [],
-            [],
-            color="brown",
-            marker="P",
-            linewidth=0,
-            label=f"Medical Centers Not Selected ($n$={len(mc_not_selected)})",
-        )
+    plot_serving_locations(
+        ax, medical_center_locs, serviced_points, legend_elements, colors_ops
     )
+    # Plot locations of unselected medical centers
+    plot_unselected_locations(ax, medical_center_locs, selected_sites, legend_elements)
 
     plt.title("LSCP - Cost Matrix Solution", fontweight="bold")
     plt.legend(
