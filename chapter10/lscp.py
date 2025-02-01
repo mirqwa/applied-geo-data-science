@@ -37,6 +37,31 @@ def get_edges_subset(gdf_edges: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     DC_BGs = gpd.read_file(
         "data/tiger/TIGER2019/tl_2019_11_tract.zip", compression="zip"
     )
+    DC_BGs_Sel = DC_BGs[
+        DC_BGs["TRACTCE"].isin(
+            [
+                "980000",
+                "010202",
+                "005900",
+                "000102",
+                "000202",
+                "010800",
+                "005801",
+                "005802",
+                "010500",
+                "005602",
+                "006600",
+                "008200",
+            ]
+        )
+    ]
+    DC_BGs_Sel_D = DC_BGs_Sel.dissolve()
+    DC_BGs_Sel_D = DC_BGs_Sel_D.to_crs("EPSG:4326")
+    mask = gdf_edges.within(DC_BGs_Sel_D.loc[0, "geometry"])
+    gdf_edges_clipped = gdf_edges.loc[mask]
+    gdf_edges_clipped = gdf_edges_clipped[["osmid", "geometry"]]
+    gdf_edges_clipped_p = gdf_edges_clipped.to_crs(5070)
+    return gdf_edges_clipped_p
 
 
 if __name__ == "__main__":
@@ -51,3 +76,4 @@ if __name__ == "__main__":
     gdf_nodes, gdf_edges = get_network_data(True)
     plot_nodes_and_edges(gdf_nodes, gdf_edges)
     gdf_edges_clipped_p = get_edges_subset(gdf_edges)
+    plot_nodes_and_edges(gdf_nodes, gdf_edges_clipped_p)
