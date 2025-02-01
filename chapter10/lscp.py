@@ -2,14 +2,21 @@ from pathlib import Path
 
 import contextily as cx
 import geopandas as gpd
+import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import osmnx as ox
 import pulp
 import spaghetti
 
 from libpysal import weights
+from matplotlib.patches import Patch
 from spopt.locate.coverage import LSCP
 from spopt.locate.util import simulated_geo_points
+
+
+TRACTS = 10
+MEDICAL_CENTERS = 4
+PATIENTS = 150
 
 
 def plot_data(data: list[dict]) -> None:
@@ -33,6 +40,96 @@ def plot_data(data: list[dict]) -> None:
     plt.show()
 
 
+def plot_serving_points(lscp_from_cost_matrix, streets_gpd) -> None:
+    colors_arr = [
+        "darkslateblue",
+        "forestgreen",
+        "firebrick",
+        "peachpuff",
+        "saddlebrown",
+        "cornflowerblue",
+    ]
+    colors_ops = {f"y{i}": colors_arr[i] for i in range(len(colors_arr))}
+    serviced_points = []
+    selected_sites = []
+    for i in range(MEDICAL_CENTERS):
+        if lscp_from_cost_matrix.fac2cli[i]:
+            geom = patient_locs.iloc[lscp_from_cost_matrix.fac2cli[i]]["geometry"]
+            serviced_points.append(geom)
+            selected_sites.append(i)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    legend_elements = []
+
+    # Plot the street network
+    streets_gpd.plot(ax=ax, alpha=1, color="lightblue", zorder=1)
+    legend_elements.append(
+        mlines.Line2D(
+            [],
+            [],
+            color="lightblue",
+            label="streets",
+        )
+    )
+    for i in range(len(serviced_points)):
+        gdf = gpd.GeoDataFrame(serviced_points[i])
+
+        l = f"y{selected_sites[i]}"
+
+        label = f"coverage_points by y{selected_sites[i]}"
+        legend_elements.append(
+            Patch(facecolor=colors_ops[l], edgecolor="k", label=label)
+        )
+
+        gdf.plot(
+            ax=ax, zorder=3, alpha=0.7, edgecolor="k", color=colors_ops[l], label=label
+        )
+        medical_center_locs.iloc[[selected_sites[i]]].plot(
+            ax=ax,
+            marker="P",
+            markersize=150 * 4.0,
+            alpha=0.7,
+            zorder=4,
+            edgecolor="k",
+            facecolor=colors_ops[l],
+        )
+
+        legend_elements.append(
+            mlines.Line2D(
+                [],
+                [],
+                color=colors_ops[l],
+                marker="P",
+                ms=20 / 2,
+                markeredgecolor="k",
+                linewidth=0,
+                alpha=0.8,
+                label=f"y{selected_sites[i]} medical center selected",
+            )
+        )
+    # Plot locations of unselected medical centers
+    mc_not_selected = medical_center_locs.drop(selected_sites)
+    mc_not_selected.plot(ax=ax, color="darkgrey", marker="P", markersize=80, zorder=3)
+    legend_elements.append(
+        mlines.Line2D(
+            [],
+            [],
+            color="brown",
+            marker="P",
+            linewidth=0,
+            label=f"Medical Centers Not Selected ($n$={len(mc_not_selected)})",
+        )
+    )
+
+    plt.title("LSCP - Cost Matrix Solution", fontweight="bold")
+    plt.legend(
+        handles=legend_elements,
+        loc="upper right",
+        bbox_to_anchor=(0, 1),
+        borderaxespad=2.5,
+    )
+    plt.show()
+
+
 def get_network_data(use_local_data: bool = False) -> tuple[gpd.GeoDataFrame]:
     nodes_path = "data/washington/network_nodes.geojson"
     edges_path = "data/washington/network_edges.geojson"
@@ -48,7 +145,7 @@ def get_network_data(use_local_data: bool = False) -> tuple[gpd.GeoDataFrame]:
 def get_edges_subset(gdf_edges: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf_edges.reset_index(inplace=True)
     DC_BGs = gpd.read_file("data/tiger/TIGER2019/tl_2019_11_tract.zip")
-    knn = weights.KNN.from_dataframe(DC_BGs, k=10)
+    knn = weights.KNN.from_dataframe(DC_BGs, k=TRACTS)
     neighboring_tracts = [150] + list(knn[150].keys())
     DC_BGs_Sel = DC_BGs.iloc[neighboring_tracts]
     DC_BGs_Sel_D = DC_BGs_Sel.dissolve()
@@ -75,11 +172,13 @@ def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> tuple:
 def simulate_patients_and_medical_centers(
     street_buffer: gpd.GeoDataFrame, ntw: spaghetti.Network
 ) -> tuple[gpd.GeoDataFrame]:
-    patient_locs = simulated_geo_points(street_buffer, needed=150, seed=12345)
+    patient_locs = simulated_geo_points(street_buffer, needed=PATIENTS, seed=12345)
     ntw.snapobservations(patient_locs, "patients", attribute=True)
     patient_locs = spaghetti.element_as_gdf(ntw, pp_name="patients", snapped=True)
     patient_locs.crs = "EPSG:5070"
-    medical_center_locs = simulated_geo_points(street_buffer, needed=4, seed=12345)
+    medical_center_locs = simulated_geo_points(
+        street_buffer, needed=MEDICAL_CENTERS, seed=12345
+    )
     ntw.snapobservations(medical_center_locs, "medical_centers", attribute=True)
     medical_center_locs = spaghetti.element_as_gdf(
         ntw, pp_name="medical_centers", snapped=True
@@ -160,3 +259,4 @@ if __name__ == "__main__":
         ]
     )
     lscp_from_cost_matrix = get_the_serving_locations_for_patients(ntw)
+    plot_serving_points(lscp_from_cost_matrix, streets_gpd)
