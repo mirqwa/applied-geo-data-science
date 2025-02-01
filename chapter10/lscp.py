@@ -11,11 +11,12 @@ from libpysal import weights
 from spopt.locate.util import simulated_geo_points
 
 
-def plot_street(gdf_edges: gpd.GeoDataFrame) -> None:
+def plot_data(data: list[dict]) -> None:
     _, ax = plt.subplots(figsize=(15, 15))
-    gdf_edges_wm = gdf_edges.to_crs(epsg=3857)
-    gdf_edges_wm.plot(ax=ax, alpha=0.5, color="red", edgecolor="k")
-    cx.add_basemap(ax, crs=gdf_edges_wm.crs, zoom=12)
+    for data_to_plot in data:
+        data_to_plot_wm = data_to_plot["gdf"].to_crs(epsg=3857)
+        data_to_plot_wm.plot(ax=ax, alpha=0.5, color=data_to_plot["color"])
+    cx.add_basemap(ax, crs=data_to_plot_wm.crs, zoom=12)
     ax.set_axis_off()
     plt.show()
 
@@ -58,7 +59,9 @@ def convert_gpd_to_spaghetti(gdf_edges: gpd.GeoDataFrame) -> tuple:
     return street_buffer, streets_gpd
 
 
-def simulate_patients_and_medical_centers(street_buffer: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame]:
+def simulate_patients_and_medical_centers(
+    street_buffer: gpd.GeoDataFrame,
+) -> tuple[gpd.GeoDataFrame]:
     patient_locs = simulated_geo_points(street_buffer, needed=150, seed=32)
     medical_center_locs = simulated_geo_points(street_buffer, needed=4, seed=32)
     return patient_locs, medical_center_locs
@@ -67,9 +70,9 @@ def simulate_patients_and_medical_centers(street_buffer: gpd.GeoDataFrame) -> tu
 if __name__ == "__main__":
     solver = pulp.PULP_CBC_CMD(msg=False, warmStart=True)
     _, gdf_edges = get_network_data(True)
-    plot_street(gdf_edges)
+    plot_data([{"gdf": gdf_edges, "color": "black"}])
     gdf_edges_clipped_p = get_edges_subset(gdf_edges)
-    plot_street(gdf_edges_clipped_p)
+    plot_data([{"gdf": gdf_edges_clipped_p, "color": "black"}])
     street_buffer, streets_gpd = convert_gpd_to_spaghetti(gdf_edges_clipped_p)
     patient_locs, medical_center_locs = simulate_patients_and_medical_centers(
         street_buffer
