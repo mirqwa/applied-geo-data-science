@@ -13,24 +13,9 @@ from googlemaps import Client
 
 np.random.seed(32)
 
-CUSTOMERS = 5
+CUSTOMERS = 15
 WH_LAT = 40.749587
 WH_LON = -73.985441
-
-
-def plot_data(data_gdf: gpd.GeoDataFrame) -> None:
-    _, ax = plt.subplots(figsize=(15, 15))
-    data_gdf_wm = data_gdf.to_crs(epsg=3857)
-    data_gdf_wm.plot(ax=ax, color=data_gdf_wm["colors"])
-    cx.add_basemap(
-        ax, crs=data_gdf_wm.crs, zoom=16, source=cx.providers.CartoDB.Voyager
-    )
-    for x, y, label in zip(
-        data_gdf_wm.geometry.x, data_gdf_wm.geometry.y, data_gdf_wm.Label
-    ):
-        ax.annotate(label, xy=(x, y), xytext=(3, 3), textcoords="offset points")
-    ax.set_axis_off()
-    plt.show()
 
 
 def get_gmaps_client(api_key: str) -> Client:
@@ -112,14 +97,49 @@ def get_optimal_distances(distances: np.array):
             if i != j and (i != 0 and j != 0):
                 tsp_problem += u[i] - u[j] <= (CUSTOMERS + 1) * (1 - x[i, j]) - 1
     status = tsp_problem.solve()
+    return x
+
+
+def plot_solution(data_gdf: gpd.GeoDataFrame, x: dict):
+    f, ax = plt.subplots(1, figsize=(10, 10))
+
+    data_gdf.plot(ax=ax, color=data_gdf["colors"])
+
+    # Add basemap
+    cx.add_basemap(ax, crs=data_gdf.crs, zoom=16)
+
+    for lon, lat, label in zip(
+        data_gdf.geometry.x, data_gdf.geometry.y, data_gdf.Label
+    ):
+        ax.annotate(label, xy=(lon, lat), xytext=(3, 3), textcoords="offset points")
+
+    # Plot the optimal route between stops
+    routes = [
+        (i, j)
+        for i in range(CUSTOMERS + 1)
+        for j in range(CUSTOMERS + 1)
+        if pulp.value(x[i, j]) == 1
+    ]
+
+    arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor="darkblue")
+
+    for i, j in routes:
+        ax.annotate(
+            "",
+            xy=[data_gdf.iloc[j].geometry.x, data_gdf.iloc[j].geometry.y],
+            xytext=[data_gdf.iloc[i].geometry.x, data_gdf.iloc[i].geometry.y],
+            arrowprops=arrowprops,
+        )
+
+    plt.show()
 
 
 def main(api_key: str) -> None:
     g_maps_client = get_gmaps_client(api_key)
     data_gdf = generate_data()
-    plot_data(data_gdf)
     distances = get_origin_destination_cost_matrix(data_gdf, g_maps_client)
-    get_optimal_distances(distances)
+    x = get_optimal_distances(distances)
+    plot_solution(data_gdf, x)
 
 
 if __name__ == "__main__":
