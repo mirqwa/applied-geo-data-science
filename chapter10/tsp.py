@@ -1,7 +1,9 @@
 import argparse
 
+import contextily as cx
 import geopandas as gpd
 import gmaps
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -15,12 +17,23 @@ WH_LAT = 40.749587
 WH_LON = -73.985441
 
 
+def plot_data(data: gpd.GeoDataFrame) -> None:
+    _, ax = plt.subplots(figsize=(15, 15))
+    data_wm = data.to_crs(epsg=3857)
+    data_wm.plot(ax=ax, color=data_wm["colors"])
+    cx.add_basemap(ax, crs=data_wm.crs, zoom=16, source=cx.providers.CartoDB.Voyager)
+    for x, y, label in zip(data_wm.geometry.x, data_wm.geometry.y, data_wm.Label):
+        ax.annotate(label, xy=(x, y), xytext=(3, 3), textcoords="offset points")
+    ax.set_axis_off()
+    plt.show()
+
+
 def get_gmaps_client(api_key: str):
     gmaps.configure(api_key=api_key)
     client = Client(key=api_key)
 
 
-def generate_data():
+def generate_data() -> gpd.GeoDataFrame:
     locs = pd.DataFrame(
         {
             "latitude": np.random.normal(WH_LAT, 0.008, CUSTOMERS),
@@ -49,6 +62,7 @@ def generate_data():
 def main(api_key: str) -> None:
     get_gmaps_client(api_key)
     data = generate_data()
+    plot_data(data)
 
 
 if __name__ == "__main__":
