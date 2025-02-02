@@ -17,20 +17,25 @@ WH_LAT = 40.749587
 WH_LON = -73.985441
 
 
-def plot_data(data: gpd.GeoDataFrame) -> None:
+def plot_data(data_gdf: gpd.GeoDataFrame) -> None:
     _, ax = plt.subplots(figsize=(15, 15))
-    data_wm = data.to_crs(epsg=3857)
-    data_wm.plot(ax=ax, color=data_wm["colors"])
-    cx.add_basemap(ax, crs=data_wm.crs, zoom=16, source=cx.providers.CartoDB.Voyager)
-    for x, y, label in zip(data_wm.geometry.x, data_wm.geometry.y, data_wm.Label):
+    data_gdf_wm = data_gdf.to_crs(epsg=3857)
+    data_gdf_wm.plot(ax=ax, color=data_gdf_wm["colors"])
+    cx.add_basemap(
+        ax, crs=data_gdf_wm.crs, zoom=16, source=cx.providers.CartoDB.Voyager
+    )
+    for x, y, label in zip(
+        data_gdf_wm.geometry.x, data_gdf_wm.geometry.y, data_gdf_wm.Label
+    ):
         ax.annotate(label, xy=(x, y), xytext=(3, 3), textcoords="offset points")
     ax.set_axis_off()
     plt.show()
 
 
-def get_gmaps_client(api_key: str):
+def get_gmaps_client(api_key: str) -> Client:
     gmaps.configure(api_key=api_key)
-    client = Client(key=api_key)
+    g_maps_client = Client(key=api_key)
+    return g_maps_client
 
 
 def generate_data() -> gpd.GeoDataFrame:
@@ -59,10 +64,27 @@ def generate_data() -> gpd.GeoDataFrame:
     return data_gdf
 
 
+def get_origin_destination_cost_matrix(
+    data_gdf: gpd.GeoDataFrame, g_maps_client: Client
+) -> np.array:
+    distances = np.zeros((len(data_gdf), len(data_gdf)))
+    data_gdf["coord"] = (
+        data_gdf.latitude.astype(str) + "," + data_gdf.longitude.astype(str)
+    )
+    for lat in range(len(data_gdf)):
+        for lon in range(len(data_gdf)):
+            maps_api_result = g_maps_client.directions(
+                data_gdf["coord"].iloc[lat], data_gdf["coord"].iloc[lon], mode="driving"
+            )
+            distances[lat][lon] = maps_api_result[0]["legs"][0]["distance"]["value"]
+    return distances.astype(int)
+
+
 def main(api_key: str) -> None:
-    get_gmaps_client(api_key)
-    data = generate_data()
-    plot_data(data)
+    g_maps_client = get_gmaps_client(api_key)
+    data_gdf = generate_data()
+    plot_data(data_gdf)
+    distances = get_origin_destination_cost_matrix(data_gdf, g_maps_client)
 
 
 if __name__ == "__main__":
