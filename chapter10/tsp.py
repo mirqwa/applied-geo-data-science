@@ -2,6 +2,7 @@ import argparse
 
 import gmaps
 import numpy as np
+import pandas as pd
 
 from googlemaps import Client
 
@@ -18,8 +19,24 @@ def get_gmaps_client(api_key: str):
     client = Client(key=api_key)
 
 
+def generate_data():
+    locs = pd.DataFrame(
+        {
+            "latitude": np.random.normal(WH_LAT, 0.008, CUSTOMERS),
+            "longitude": np.random.normal(WH_LON, 0.008, CUSTOMERS),
+        }
+    )
+    cols = ["latitude", "longitude"]
+    wh = pd.DataFrame([[WH_LAT, WH_LON]], columns=cols)
+    data = pd.concat([wh, locs])
+    data.reset_index(inplace=True)
+    data.drop(["index"], axis=1, inplace=True)
+    breakpoint()
+
+
 def main(api_key: str) -> None:
     get_gmaps_client(api_key)
+    generate_data()
 
 
 if __name__ == "__main__":
