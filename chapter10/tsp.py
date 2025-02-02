@@ -1,5 +1,6 @@
 import argparse
 
+import geopandas as gpd
 import gmaps
 import numpy as np
 import pandas as pd
@@ -31,12 +32,23 @@ def generate_data():
     data = pd.concat([wh, locs])
     data.reset_index(inplace=True)
     data.drop(["index"], axis=1, inplace=True)
-    breakpoint()
+    data.reset_index(inplace=True)
+    data.rename(columns={"index": "Label"}, inplace=True)
+    data["Label"] = data["Label"].astype(str)
+    data.at[0, "Label"] = "Warehouse"
+    data["colors"] = np.where(
+        data["Label"] == "Warehouse", "darkslateblue", "forestgreen"
+    )
+    data_gdf = gpd.GeoDataFrame(
+        data,
+        geometry=gpd.points_from_xy(data.longitude, data.latitude, crs="EPSG:4326"),
+    )
+    return data_gdf
 
 
 def main(api_key: str) -> None:
     get_gmaps_client(api_key)
-    generate_data()
+    data = generate_data()
 
 
 if __name__ == "__main__":
