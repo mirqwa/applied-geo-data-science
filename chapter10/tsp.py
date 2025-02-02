@@ -6,13 +6,14 @@ import gmaps
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pulp
 
 from googlemaps import Client
 
 
 np.random.seed(32)
 
-CUSTOMERS = 15
+CUSTOMERS = 5
 WH_LAT = 40.749587
 WH_LON = -73.985441
 
@@ -80,11 +81,45 @@ def get_origin_destination_cost_matrix(
     return distances.astype(int)
 
 
+def get_optimal_distances(distances: np.array):
+    tsp_problem = pulp.LpProblem("tsp_mip", pulp.LpMinimize)
+    x = pulp.LpVariable.dicts(
+        "x",
+        ((i, j) for i in range(CUSTOMERS + 1) for j in range(CUSTOMERS + 1)),
+        lowBound=0,
+        upBound=1,
+        cat="Binary",
+    )
+    u = pulp.LpVariable.dicts(
+        "u",
+        (i for i in range(CUSTOMERS + 1)),
+        lowBound=1,
+        upBound=(CUSTOMERS + 1),
+        cat="Integer",
+    )
+    tsp_problem += pulp.lpSum(
+        distances[i][j] * x[i, j]
+        for i in range(CUSTOMERS + 1)
+        for j in range(CUSTOMERS + 1)
+    )
+    for i in range(CUSTOMERS + 1):
+        tsp_problem += x[i, i] == 0
+    for i in range(CUSTOMERS + 1):
+        tsp_problem += pulp.lpSum(x[i, j] for j in range(CUSTOMERS + 1)) == 1
+        tsp_problem += pulp.lpSum(x[j, i] for j in range(CUSTOMERS + 1)) == 1
+    for i in range(CUSTOMERS + 1):
+        for j in range(CUSTOMERS + 1):
+            if i != j and (i != 0 and j != 0):
+                tsp_problem += u[i] - u[j] <= (CUSTOMERS + 1) * (1 - x[i, j]) - 1
+    status = tsp_problem.solve()
+
+
 def main(api_key: str) -> None:
     g_maps_client = get_gmaps_client(api_key)
     data_gdf = generate_data()
     plot_data(data_gdf)
     distances = get_origin_destination_cost_matrix(data_gdf, g_maps_client)
+    get_optimal_distances(distances)
 
 
 if __name__ == "__main__":
