@@ -25,6 +25,7 @@ def main(api_key: str) -> None:
     distances = utils.get_origin_destination_cost_matrix(data_gdf, g_maps_client, True)
     x = utils.get_optimal_distances_for_vrp(1, distances)
     routes = get_routes(x)
+    utils.plot_vrp_solution(data_gdf, routes)
 
 
 if __name__ == "__main__":

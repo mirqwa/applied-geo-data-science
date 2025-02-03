@@ -67,7 +67,7 @@ def main(api_key: str) -> None:
     distances = utils.get_origin_destination_cost_matrix(data_gdf, g_maps_client)
     x = get_optimal_distances(distances)
     routes = get_routes(x)
-    utils.plot_solution(data_gdf, routes)
+    utils.plot_tsp_solution(data_gdf, routes)
 
 
 if __name__ == "__main__":

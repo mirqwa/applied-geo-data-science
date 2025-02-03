@@ -16,6 +16,8 @@ import constants
 
 np.random.seed(32)
 
+arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor="darkblue")
+
 
 def generate_data() -> gpd.GeoDataFrame:
     locs = pd.DataFrame(
@@ -145,8 +147,8 @@ def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
     return x
 
 
-def plot_solution(data_gdf: gpd.GeoDataFrame, routes: list):
-    f, ax = plt.subplots(1, figsize=(15, 15))
+def plot_data_with_basemap(data_gdf: gpd.GeoDataFrame) -> plt.Axes:
+    _, ax = plt.subplots(1, figsize=(15, 15))
 
     data_gdf.plot(ax=ax, color=data_gdf["colors"])
 
@@ -157,8 +159,12 @@ def plot_solution(data_gdf: gpd.GeoDataFrame, routes: list):
         data_gdf.geometry.x, data_gdf.geometry.y, data_gdf.Label
     ):
         ax.annotate(label, xy=(lon, lat), xytext=(3, 3), textcoords="offset points")
-    
-    arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor="darkblue")
+
+    return ax
+
+
+def plot_tsp_solution(data_gdf: gpd.GeoDataFrame, routes: list):
+    ax = plot_data_with_basemap(data_gdf)
 
     # Plot the optimal route between stops
     for i, j in routes:
@@ -169,4 +175,19 @@ def plot_solution(data_gdf: gpd.GeoDataFrame, routes: list):
             arrowprops=arrowprops,
         )
 
+    plt.show()
+
+
+def plot_vrp_solution(data_gdf: gpd.GeoDataFrame, routes: list):
+    ax = plot_data_with_basemap(data_gdf)
+
+    # Plot the optimal route between stops
+    for _, i, j in routes:
+        ax.annotate(
+            "",
+            xy=[data_gdf.iloc[j].geometry.x, data_gdf.iloc[j].geometry.y],
+            xytext=[data_gdf.iloc[i].geometry.x, data_gdf.iloc[i].geometry.y],
+            arrowprops=arrowprops,
+        )
+    
     plt.show()
