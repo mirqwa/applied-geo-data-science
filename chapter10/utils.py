@@ -213,6 +213,18 @@ def get_optimal_distances_for_vapacitated_vrp(
     return x, vehicles
 
 
+def get_vrt_routes(x: np.array, vehicles: int) -> list:
+    routes = [
+        (k, i, j)
+        for k in range(vehicles)
+        for i in range(constants.CUSTOMERS + 1)
+        for j in range(constants.CUSTOMERS + 1)
+        if i != j and pulp.value(x[i][j][k]) == 1
+    ]
+
+    return routes
+
+
 def plot_data_with_basemap(data_gdf: gpd.GeoDataFrame) -> plt.Axes:
     _, ax = plt.subplots(1, figsize=(15, 15))
 
