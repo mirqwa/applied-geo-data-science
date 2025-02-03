@@ -1,8 +1,10 @@
 import itertools
 from pathlib import Path
 
+import contextily as cx
 import geopandas as gpd
 import gmaps
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pulp
@@ -141,3 +143,37 @@ def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
             print("Distance:", pulp.value(lp_problem.objective))
             break
     return x
+
+
+def plot_solution(data_gdf: gpd.GeoDataFrame, x: dict):
+    f, ax = plt.subplots(1, figsize=(15, 15))
+
+    data_gdf.plot(ax=ax, color=data_gdf["colors"])
+
+    # Add basemap
+    cx.add_basemap(ax, crs=data_gdf.crs, zoom=16)
+
+    for lon, lat, label in zip(
+        data_gdf.geometry.x, data_gdf.geometry.y, data_gdf.Label
+    ):
+        ax.annotate(label, xy=(lon, lat), xytext=(3, 3), textcoords="offset points")
+
+    # Plot the optimal route between stops
+    routes = [
+        (i, j)
+        for i in range(constants.CUSTOMERS + 1)
+        for j in range(constants.CUSTOMERS + 1)
+        if pulp.value(x[i, j]) == 1
+    ]
+
+    arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor="darkblue")
+
+    for i, j in routes:
+        ax.annotate(
+            "",
+            xy=[data_gdf.iloc[j].geometry.x, data_gdf.iloc[j].geometry.y],
+            xytext=[data_gdf.iloc[i].geometry.x, data_gdf.iloc[i].geometry.y],
+            arrowprops=arrowprops,
+        )
+
+    plt.show()
