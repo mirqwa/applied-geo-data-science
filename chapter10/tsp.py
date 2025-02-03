@@ -10,44 +10,17 @@ import pulp
 
 from googlemaps import Client
 
+import constants
+import utils
+
 
 np.random.seed(32)
-
-CUSTOMERS = 15
-WH_LAT = 40.749587
-WH_LON = -73.985441
 
 
 def get_gmaps_client(api_key: str) -> Client:
     gmaps.configure(api_key=api_key)
     g_maps_client = Client(key=api_key)
     return g_maps_client
-
-
-def generate_data() -> gpd.GeoDataFrame:
-    locs = pd.DataFrame(
-        {
-            "latitude": np.random.normal(WH_LAT, 0.008, CUSTOMERS),
-            "longitude": np.random.normal(WH_LON, 0.008, CUSTOMERS),
-        }
-    )
-    cols = ["latitude", "longitude"]
-    wh = pd.DataFrame([[WH_LAT, WH_LON]], columns=cols)
-    data = pd.concat([wh, locs])
-    data.reset_index(inplace=True)
-    data.drop(["index"], axis=1, inplace=True)
-    data.reset_index(inplace=True)
-    data.rename(columns={"index": "Label"}, inplace=True)
-    data["Label"] = data["Label"].astype(str)
-    data.at[0, "Label"] = "Warehouse"
-    data["colors"] = np.where(
-        data["Label"] == "Warehouse", "darkslateblue", "forestgreen"
-    )
-    data_gdf = gpd.GeoDataFrame(
-        data,
-        geometry=gpd.points_from_xy(data.longitude, data.latitude, crs="EPSG:4326"),
-    )
-    return data_gdf
 
 
 def get_origin_destination_cost_matrix(
@@ -70,32 +43,38 @@ def get_optimal_distances(distances: np.array):
     tsp_problem = pulp.LpProblem("tsp_mip", pulp.LpMinimize)
     x = pulp.LpVariable.dicts(
         "x",
-        ((i, j) for i in range(CUSTOMERS + 1) for j in range(CUSTOMERS + 1)),
+        (
+            (i, j)
+            for i in range(constants.CUSTOMERS + 1)
+            for j in range(constants.CUSTOMERS + 1)
+        ),
         lowBound=0,
         upBound=1,
         cat="Binary",
     )
     u = pulp.LpVariable.dicts(
         "u",
-        (i for i in range(CUSTOMERS + 1)),
+        (i for i in range(constants.CUSTOMERS + 1)),
         lowBound=1,
-        upBound=(CUSTOMERS + 1),
+        upBound=(constants.CUSTOMERS + 1),
         cat="Integer",
     )
     tsp_problem += pulp.lpSum(
         distances[i][j] * x[i, j]
-        for i in range(CUSTOMERS + 1)
-        for j in range(CUSTOMERS + 1)
+        for i in range(constants.CUSTOMERS + 1)
+        for j in range(constants.CUSTOMERS + 1)
     )
-    for i in range(CUSTOMERS + 1):
+    for i in range(constants.CUSTOMERS + 1):
         tsp_problem += x[i, i] == 0
-    for i in range(CUSTOMERS + 1):
-        tsp_problem += pulp.lpSum(x[i, j] for j in range(CUSTOMERS + 1)) == 1
-        tsp_problem += pulp.lpSum(x[j, i] for j in range(CUSTOMERS + 1)) == 1
-    for i in range(CUSTOMERS + 1):
-        for j in range(CUSTOMERS + 1):
+    for i in range(constants.CUSTOMERS + 1):
+        tsp_problem += pulp.lpSum(x[i, j] for j in range(constants.CUSTOMERS + 1)) == 1
+        tsp_problem += pulp.lpSum(x[j, i] for j in range(constants.CUSTOMERS + 1)) == 1
+    for i in range(constants.CUSTOMERS + 1):
+        for j in range(constants.CUSTOMERS + 1):
             if i != j and (i != 0 and j != 0):
-                tsp_problem += u[i] - u[j] <= (CUSTOMERS + 1) * (1 - x[i, j]) - 1
+                tsp_problem += (
+                    u[i] - u[j] <= (constants.CUSTOMERS + 1) * (1 - x[i, j]) - 1
+                )
     status = tsp_problem.solve()
     return x
 
@@ -116,8 +95,8 @@ def plot_solution(data_gdf: gpd.GeoDataFrame, x: dict):
     # Plot the optimal route between stops
     routes = [
         (i, j)
-        for i in range(CUSTOMERS + 1)
-        for j in range(CUSTOMERS + 1)
+        for i in range(constants.CUSTOMERS + 1)
+        for j in range(constants.CUSTOMERS + 1)
         if pulp.value(x[i, j]) == 1
     ]
 
@@ -136,7 +115,7 @@ def plot_solution(data_gdf: gpd.GeoDataFrame, x: dict):
 
 def main(api_key: str) -> None:
     g_maps_client = get_gmaps_client(api_key)
-    data_gdf = generate_data()
+    data_gdf = utils.generate_data()
     distances = get_origin_destination_cost_matrix(data_gdf, g_maps_client)
     x = get_optimal_distances(distances)
     plot_solution(data_gdf, x)
