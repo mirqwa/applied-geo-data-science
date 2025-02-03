@@ -138,6 +138,8 @@ def add_vrt_constraints(
                 == 0
             )
 
+    lp_problem = add_subtours_constraint(lp_problem, vehicles, x)
+
     return lp_problem
 
 
@@ -160,13 +162,23 @@ def add_subtours_constraint(
     return lp_problem
 
 
+def add_problem_variables_and_constraints(
+    lp_problem: pulp.LpProblem, distances: np.array, vehicles: int
+):
+    x = get_vrp_problem_variables(vehicles)
+    lp_problem += get_objective_function(distances, vehicles, x)
+    lp_problem = add_vrt_constraints(lp_problem, vehicles, x)
+
+    return lp_problem, x
+
+
 def get_optimal_distances_for_vrp(vehicles: int, distances: np.array) -> tuple:
     for vehicles in range(1, vehicles + 1):
         lp_problem = pulp.LpProblem("VRP", pulp.LpMinimize)
-        x = get_vrp_problem_variables(vehicles)
-        lp_problem += get_objective_function(distances, vehicles, x)
-        lp_problem = add_vrt_constraints(lp_problem, vehicles, x)
-        lp_problem = add_subtours_constraint(lp_problem, vehicles, x)
+        lp_problem, x = add_problem_variables_and_constraints(
+            lp_problem, distances, vehicles
+        )
+        # lp_problem = add_subtours_constraint(lp_problem, vehicles, x)
         if lp_problem.solve() == 1:
             print("# Required Vehicles:", vehicles)
             print("Distance:", pulp.value(lp_problem.objective))
@@ -183,15 +195,9 @@ def get_optimal_distances_for_vapacitated_vrp(
     for vehicles in range(1, vehicles + 1):
         # Linear Programming Problem
         lp_problem = pulp.LpProblem("CVRP", pulp.LpMinimize)
-
-        # Defining problem variables which are binary
-        x = get_vrp_problem_variables(vehicles)
-
-        # Setting the objective function
-        lp_problem += get_objective_function(distances, vehicles, x)
-
-        # Adding in the constraints
-        lp_problem = add_vrt_constraints(lp_problem, vehicles, x)
+        lp_problem, x = add_problem_variables_and_constraints(
+            lp_problem, distances, vehicles
+        )
 
         # Adding in the capacity constraint
         for k in range(vehicles):
@@ -203,8 +209,6 @@ def get_optimal_distances_for_vapacitated_vrp(
                 )
                 <= capacity
             )
-
-        lp_problem = add_subtours_constraint(lp_problem, vehicles, x)
 
         if lp_problem.solve() == 1:
             print("# Required Vehicles:", vehicles)
