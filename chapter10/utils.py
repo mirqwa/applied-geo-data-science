@@ -16,8 +16,6 @@ import constants
 
 np.random.seed(32)
 
-arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor="darkblue")
-
 
 def generate_data() -> gpd.GeoDataFrame:
     locs = pd.DataFrame(
@@ -245,17 +243,24 @@ def plot_data_with_basemap(data_gdf: gpd.GeoDataFrame) -> plt.Axes:
     return ax
 
 
+def annotate_route(
+    ax: plt.Axes, data_gdf: gpd.GeoDataFrame, i: int, j: int, color: str
+) -> None:
+    arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor=color)
+    ax.annotate(
+        "",
+        xy=[data_gdf.iloc[j].geometry.x, data_gdf.iloc[j].geometry.y],
+        xytext=[data_gdf.iloc[i].geometry.x, data_gdf.iloc[i].geometry.y],
+        arrowprops=arrowprops,
+    )
+
+
 def plot_tsp_solution(data_gdf: gpd.GeoDataFrame, routes: list) -> None:
     ax = plot_data_with_basemap(data_gdf)
 
     # Plot the optimal route between stops
     for i, j in routes:
-        ax.annotate(
-            "",
-            xy=[data_gdf.iloc[j].geometry.x, data_gdf.iloc[j].geometry.y],
-            xytext=[data_gdf.iloc[i].geometry.x, data_gdf.iloc[i].geometry.y],
-            arrowprops=arrowprops,
-        )
+        annotate_route(ax, data_gdf, i, j, "darkblue")
 
     plt.show()
 
@@ -266,12 +271,6 @@ def plot_vrp_solution(data_gdf: gpd.GeoDataFrame, routes: list) -> None:
     # Plot the optimal route between stops
     for k, i, j in routes:
         color = "blue" if k == 0 else "purple" if k == 1 else "black"
-        arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor=color)
-        ax.annotate(
-            "",
-            xy=[data_gdf.iloc[j].geometry.x, data_gdf.iloc[j].geometry.y],
-            xytext=[data_gdf.iloc[i].geometry.x, data_gdf.iloc[i].geometry.y],
-            arrowprops=arrowprops,
-        )
+        annotate_route(ax, data_gdf, i, j, color)
 
     plt.show()
