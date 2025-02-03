@@ -147,6 +147,100 @@ def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
     return x
 
 
+def get_optimal_distances_for_vapacitated_vrp(
+    data_gdf: gpd.GeoDataFrame,
+    distances: np.array,
+    vehicles: int,
+    capacity: int,
+) -> list:
+    for vehicles in range(1, vehicles + 1):
+        # Linear Programming Problem
+        lp_problem = pulp.LpProblem("CVRP", pulp.LpMinimize)
+
+        # Defining problem variables which are binary
+        x = [
+            [
+                [
+                    pulp.LpVariable("x%s_%s,%s" % (i, j, k), cat="Binary")
+                    if i != j
+                    else None
+                    for k in range(vehicles)
+                ]
+                for j in range(constants.CUSTOMERS + 1)
+            ]
+            for i in range(constants.CUSTOMERS + 1)
+        ]
+
+        # Setting the objective function
+        lp_problem += pulp.lpSum(
+            distances[i][j] * x[i][j][k] if i != j else 0
+            for k in range(vehicles)
+            for j in range(constants.CUSTOMERS + 1)
+            for i in range(constants.CUSTOMERS + 1)
+        )
+
+        # Adding in the constraints
+        for j in range(1, constants.CUSTOMERS + 1):
+            lp_problem += (
+                pulp.lpSum(
+                    x[i][j][k] if i != j else 0
+                    for i in range(constants.CUSTOMERS + 1)
+                    for k in range(vehicles)
+                )
+                == 1
+            )
+
+        for k in range(vehicles):
+            lp_problem += (
+                pulp.lpSum(x[0][j][k] for j in range(1, constants.CUSTOMERS + 1)) == 1
+            )
+            lp_problem += (
+                pulp.lpSum(x[i][0][k] for i in range(1, constants.CUSTOMERS + 1)) == 1
+            )
+
+        for k in range(vehicles):
+            for j in range(constants.CUSTOMERS + 1):
+                lp_problem += (
+                    pulp.lpSum(
+                        x[i][j][k] if i != j else 0
+                        for i in range(constants.CUSTOMERS + 1)
+                    )
+                    - pulp.lpSum(x[j][i][k] for i in range(constants.CUSTOMERS + 1))
+                    == 0
+                )
+
+        # Adding in the capacity constraint
+        for k in range(vehicles):
+            lp_problem += (
+                pulp.lpSum(
+                    data_gdf.customer_demand[j] * x[i][j][k] if i != j else 0
+                    for i in range(constants.CUSTOMERS + 1)
+                    for j in range(1, constants.CUSTOMERS + 1)
+                )
+                <= capacity
+            )
+
+        # Adding additional constraint to prevent subtours. We'll use DFJ formulation here.
+        subtours = []
+        for i in range(2, constants.CUSTOMERS + 1):
+            subtours += itertools.combinations(range(1, constants.CUSTOMERS + 1), i)
+        for s in subtours:
+            lp_problem += (
+                pulp.lpSum(
+                    x[i][j][k] if i != j else 0
+                    for i, j in itertools.permutations(s, 2)
+                    for k in range(vehicles)
+                )
+                <= len(s) - 1
+            )
+
+        if lp_problem.solve() == 1:
+            print("# Required Vehicles:", vehicles)
+            print("Distance:", pulp.value(lp_problem.objective))
+            break
+    return x
+
+
 def plot_data_with_basemap(data_gdf: gpd.GeoDataFrame) -> plt.Axes:
     _, ax = plt.subplots(1, figsize=(15, 15))
 
@@ -189,5 +283,5 @@ def plot_vrp_solution(data_gdf: gpd.GeoDataFrame, routes: list):
             xytext=[data_gdf.iloc[i].geometry.x, data_gdf.iloc[i].geometry.y],
             arrowprops=arrowprops,
         )
-    
+
     plt.show()

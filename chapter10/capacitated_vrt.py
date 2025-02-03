@@ -8,6 +8,7 @@ def main(api_key: str) -> None:
     data_gdf = utils.generate_data_for_vrp()
     print("The number of packages:", data_gdf["customer_demand"].sum())
     distances = utils.get_origin_destination_cost_matrix(data_gdf, g_maps_client, True)
+    x = utils.get_optimal_distances_for_vapacitated_vrp(data_gdf, distances, 5, 40)
 
 
 if __name__ == "__main__":
