@@ -160,7 +160,7 @@ def add_subtours_constraint(
     return lp_problem
 
 
-def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
+def get_optimal_distances_for_vrp(vehicles: int, distances: np.array) -> tuple:
     for vehicles in range(1, vehicles + 1):
         lp_problem = pulp.LpProblem("VRP", pulp.LpMinimize)
         x = get_vrp_problem_variables(vehicles)
@@ -171,7 +171,7 @@ def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
             print("# Required Vehicles:", vehicles)
             print("Distance:", pulp.value(lp_problem.objective))
             break
-    return x
+    return x, vehicles
 
 
 def get_optimal_distances_for_vapacitated_vrp(
@@ -179,7 +179,7 @@ def get_optimal_distances_for_vapacitated_vrp(
     distances: np.array,
     vehicles: int,
     capacity: int,
-) -> list:
+) -> tuple:
     for vehicles in range(1, vehicles + 1):
         # Linear Programming Problem
         lp_problem = pulp.LpProblem("CVRP", pulp.LpMinimize)
@@ -210,7 +210,7 @@ def get_optimal_distances_for_vapacitated_vrp(
             print("# Required Vehicles:", vehicles)
             print("Distance:", pulp.value(lp_problem.objective))
             break
-    return x
+    return x, vehicles
 
 
 def plot_data_with_basemap(data_gdf: gpd.GeoDataFrame) -> plt.Axes:
