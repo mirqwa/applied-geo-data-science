@@ -1,6 +1,22 @@
 import argparse
 
+import numpy as np
+import pulp
+
+import constants
 import utils
+
+
+def get_routes(x: np.array) -> list:
+    routes = [
+        (k, i, j)
+        for k in range(1)
+        for i in range(constants.CUSTOMERS + 1)
+        for j in range(constants.CUSTOMERS + 1)
+        if i != j and pulp.value(x[i][j][k]) == 1
+    ]
+
+    return routes
 
 
 def main(api_key: str) -> None:
@@ -8,6 +24,7 @@ def main(api_key: str) -> None:
     data_gdf = utils.generate_data_for_vrp()
     distances = utils.get_origin_destination_cost_matrix(data_gdf, g_maps_client, True)
     x = utils.get_optimal_distances_for_vrp(1, distances)
+    routes = get_routes(x)
 
 
 if __name__ == "__main__":

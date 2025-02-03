@@ -51,7 +51,6 @@ def get_optimal_distances(distances: np.array):
 
 
 def get_routes(x: np.array) -> list:
-    # Plot the optimal route between stops
     routes = [
         (i, j)
         for i in range(constants.CUSTOMERS + 1)
