@@ -12,9 +12,6 @@ import constants
 import utils
 
 
-np.random.seed(32)
-
-
 def get_origin_destination_cost_matrix(
     data_gdf: gpd.GeoDataFrame, g_maps_client: Client
 ) -> np.array:

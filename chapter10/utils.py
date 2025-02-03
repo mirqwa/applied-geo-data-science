@@ -8,6 +8,9 @@ from googlemaps import Client
 import constants
 
 
+np.random.seed(32)
+
+
 def generate_data() -> gpd.GeoDataFrame:
     locs = pd.DataFrame(
         {
@@ -31,6 +34,14 @@ def generate_data() -> gpd.GeoDataFrame:
         data,
         geometry=gpd.points_from_xy(data.longitude, data.latitude, crs="EPSG:4326"),
     )
+    return data_gdf
+
+
+def generate_data_for_vrp() -> gpd.GeoDataFrame:
+    demand = np.random.randint(2, 12, constants.CUSTOMERS).tolist()
+    demand = [0] + demand
+    data_gdf = generate_data()
+    data_gdf["customer_demand"] = demand
     return data_gdf
 
 
