@@ -1,6 +1,9 @@
 import geopandas as gpd
+import gmaps
 import numpy as np
 import pandas as pd
+
+from googlemaps import Client
 
 import constants
 
@@ -29,3 +32,9 @@ def generate_data() -> gpd.GeoDataFrame:
         geometry=gpd.points_from_xy(data.longitude, data.latitude, crs="EPSG:4326"),
     )
     return data_gdf
+
+
+def get_gmaps_client(api_key: str) -> Client:
+    gmaps.configure(api_key=api_key)
+    g_maps_client = Client(key=api_key)
+    return g_maps_client

@@ -2,10 +2,8 @@ import argparse
 
 import contextily as cx
 import geopandas as gpd
-import gmaps
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import pulp
 
 from googlemaps import Client
@@ -15,12 +13,6 @@ import utils
 
 
 np.random.seed(32)
-
-
-def get_gmaps_client(api_key: str) -> Client:
-    gmaps.configure(api_key=api_key)
-    g_maps_client = Client(key=api_key)
-    return g_maps_client
 
 
 def get_origin_destination_cost_matrix(
@@ -114,7 +106,7 @@ def plot_solution(data_gdf: gpd.GeoDataFrame, x: dict):
 
 
 def main(api_key: str) -> None:
-    g_maps_client = get_gmaps_client(api_key)
+    g_maps_client = utils.get_gmaps_client(api_key)
     data_gdf = utils.generate_data()
     distances = get_origin_destination_cost_matrix(data_gdf, g_maps_client)
     x = get_optimal_distances(distances)
