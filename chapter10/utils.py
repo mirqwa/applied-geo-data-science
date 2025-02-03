@@ -109,37 +109,45 @@ def get_objective_function(
     return objective_function
 
 
+def add_vrt_constraints(
+    lp_problem: pulp.LpProblem, vehicles: int, x: list
+) -> pulp.LpProblem:
+    for j in range(1, constants.CUSTOMERS + 1):
+        lp_problem += (
+            pulp.lpSum(
+                x[i][j][k] if i != j else 0
+                for i in range(constants.CUSTOMERS + 1)
+                for k in range(vehicles)
+            )
+            == 1
+        )
+    for k in range(vehicles):
+        lp_problem += (
+            pulp.lpSum(x[0][j][k] for j in range(1, constants.CUSTOMERS + 1)) == 1
+        )
+        lp_problem += (
+            pulp.lpSum(x[i][0][k] for i in range(1, constants.CUSTOMERS + 1)) == 1
+        )
+    for k in range(vehicles):
+        for j in range(constants.CUSTOMERS + 1):
+            lp_problem += (
+                pulp.lpSum(
+                    x[i][j][k] if i != j else 0 for i in range(constants.CUSTOMERS + 1)
+                )
+                - pulp.lpSum(x[j][i][k] for i in range(constants.CUSTOMERS + 1))
+                == 0
+            )
+
+    return lp_problem
+
+
 def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
     for vehicles in range(1, vehicles + 1):
         lp_problem = pulp.LpProblem("VRP", pulp.LpMinimize)
         x = get_vrp_problem_variables(vehicles)
         lp_problem += get_objective_function(distances, vehicles, x)
-        for j in range(1, constants.CUSTOMERS + 1):
-            lp_problem += (
-                pulp.lpSum(
-                    x[i][j][k] if i != j else 0
-                    for i in range(constants.CUSTOMERS + 1)
-                    for k in range(vehicles)
-                )
-                == 1
-            )
-        for k in range(vehicles):
-            lp_problem += (
-                pulp.lpSum(x[0][j][k] for j in range(1, constants.CUSTOMERS + 1)) == 1
-            )
-            lp_problem += (
-                pulp.lpSum(x[i][0][k] for i in range(1, constants.CUSTOMERS + 1)) == 1
-            )
-        for k in range(vehicles):
-            for j in range(constants.CUSTOMERS + 1):
-                lp_problem += (
-                    pulp.lpSum(
-                        x[i][j][k] if i != j else 0
-                        for i in range(constants.CUSTOMERS + 1)
-                    )
-                    - pulp.lpSum(x[j][i][k] for i in range(constants.CUSTOMERS + 1))
-                    == 0
-                )
+        lp_problem = add_vrt_constraints(lp_problem, vehicles, x)
+
         subtours = []
         for i in range(2, constants.CUSTOMERS + 1):
             subtours += itertools.combinations(range(1, constants.CUSTOMERS + 1), i)
@@ -177,34 +185,7 @@ def get_optimal_distances_for_vapacitated_vrp(
         lp_problem += get_objective_function(distances, vehicles, x)
 
         # Adding in the constraints
-        for j in range(1, constants.CUSTOMERS + 1):
-            lp_problem += (
-                pulp.lpSum(
-                    x[i][j][k] if i != j else 0
-                    for i in range(constants.CUSTOMERS + 1)
-                    for k in range(vehicles)
-                )
-                == 1
-            )
-
-        for k in range(vehicles):
-            lp_problem += (
-                pulp.lpSum(x[0][j][k] for j in range(1, constants.CUSTOMERS + 1)) == 1
-            )
-            lp_problem += (
-                pulp.lpSum(x[i][0][k] for i in range(1, constants.CUSTOMERS + 1)) == 1
-            )
-
-        for k in range(vehicles):
-            for j in range(constants.CUSTOMERS + 1):
-                lp_problem += (
-                    pulp.lpSum(
-                        x[i][j][k] if i != j else 0
-                        for i in range(constants.CUSTOMERS + 1)
-                    )
-                    - pulp.lpSum(x[j][i][k] for i in range(constants.CUSTOMERS + 1))
-                    == 0
-                )
+        lp_problem = add_vrt_constraints(lp_problem, vehicles, x)
 
         # Adding in the capacity constraint
         for k in range(vehicles):
