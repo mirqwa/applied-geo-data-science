@@ -80,21 +80,27 @@ def get_origin_destination_cost_matrix(
     return distances
 
 
+def get_vrp_problem_variables(vehicles: int) -> list:
+    x = [
+        [
+            [
+                pulp.LpVariable("x%s_%s,%s" % (i, j, k), cat="Binary")
+                if i != j
+                else None
+                for k in range(vehicles)
+            ]
+            for j in range(constants.CUSTOMERS + 1)
+        ]
+        for i in range(constants.CUSTOMERS + 1)
+    ]
+
+    return x
+
+
 def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
     for vehicles in range(1, vehicles + 1):
         lp_problem = pulp.LpProblem("VRP", pulp.LpMinimize)
-        x = [
-            [
-                [
-                    pulp.LpVariable("x%s_%s,%s" % (i, j, k), cat="Binary")
-                    if i != j
-                    else None
-                    for k in range(vehicles)
-                ]
-                for j in range(constants.CUSTOMERS + 1)
-            ]
-            for i in range(constants.CUSTOMERS + 1)
-        ]
+        x = get_vrp_problem_variables(vehicles)
         lp_problem += pulp.lpSum(
             distances[i][j] * x[i][j][k] if i != j else 0
             for k in range(vehicles)
@@ -158,18 +164,7 @@ def get_optimal_distances_for_vapacitated_vrp(
         lp_problem = pulp.LpProblem("CVRP", pulp.LpMinimize)
 
         # Defining problem variables which are binary
-        x = [
-            [
-                [
-                    pulp.LpVariable("x%s_%s,%s" % (i, j, k), cat="Binary")
-                    if i != j
-                    else None
-                    for k in range(vehicles)
-                ]
-                for j in range(constants.CUSTOMERS + 1)
-            ]
-            for i in range(constants.CUSTOMERS + 1)
-        ]
+        x = get_vrp_problem_variables(vehicles)
 
         # Setting the objective function
         lp_problem += pulp.lpSum(
