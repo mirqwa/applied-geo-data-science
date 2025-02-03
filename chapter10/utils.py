@@ -97,16 +97,23 @@ def get_vrp_problem_variables(vehicles: int) -> list:
     return x
 
 
+def get_objective_function(
+    distances: np.array, vehicles: int, x: list
+) -> pulp.LpAffineExpression:
+    objective_function = pulp.lpSum(
+        distances[i][j] * x[i][j][k] if i != j else 0
+        for k in range(vehicles)
+        for j in range(constants.CUSTOMERS + 1)
+        for i in range(constants.CUSTOMERS + 1)
+    )
+    return objective_function
+
+
 def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
     for vehicles in range(1, vehicles + 1):
         lp_problem = pulp.LpProblem("VRP", pulp.LpMinimize)
         x = get_vrp_problem_variables(vehicles)
-        lp_problem += pulp.lpSum(
-            distances[i][j] * x[i][j][k] if i != j else 0
-            for k in range(vehicles)
-            for j in range(constants.CUSTOMERS + 1)
-            for i in range(constants.CUSTOMERS + 1)
-        )
+        lp_problem += get_objective_function(distances, vehicles, x)
         for j in range(1, constants.CUSTOMERS + 1):
             lp_problem += (
                 pulp.lpSum(
@@ -167,12 +174,7 @@ def get_optimal_distances_for_vapacitated_vrp(
         x = get_vrp_problem_variables(vehicles)
 
         # Setting the objective function
-        lp_problem += pulp.lpSum(
-            distances[i][j] * x[i][j][k] if i != j else 0
-            for k in range(vehicles)
-            for j in range(constants.CUSTOMERS + 1)
-            for i in range(constants.CUSTOMERS + 1)
-        )
+        lp_problem += get_objective_function(distances, vehicles, x)
 
         # Adding in the constraints
         for j in range(1, constants.CUSTOMERS + 1):
