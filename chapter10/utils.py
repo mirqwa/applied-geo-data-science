@@ -186,7 +186,7 @@ def get_optimal_distances_for_vrp(vehicles: int, distances: np.array) -> tuple:
     return x, vehicles
 
 
-def get_optimal_distances_for_vapacitated_vrp(
+def get_optimal_distances_for_capacitated_vrp(
     data_gdf: gpd.GeoDataFrame,
     distances: np.array,
     vehicles: int,
@@ -217,7 +217,7 @@ def get_optimal_distances_for_vapacitated_vrp(
     return x, vehicles
 
 
-def get_vrt_routes(x: np.array, vehicles: int) -> list:
+def get_vrt_routes(x: list, vehicles: int) -> list:
     routes = [
         (k, i, j)
         for k in range(vehicles)
