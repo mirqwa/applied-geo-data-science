@@ -245,7 +245,7 @@ def plot_data_with_basemap(data_gdf: gpd.GeoDataFrame) -> plt.Axes:
     return ax
 
 
-def plot_tsp_solution(data_gdf: gpd.GeoDataFrame, routes: list):
+def plot_tsp_solution(data_gdf: gpd.GeoDataFrame, routes: list) -> None:
     ax = plot_data_with_basemap(data_gdf)
 
     # Plot the optimal route between stops
@@ -260,11 +260,13 @@ def plot_tsp_solution(data_gdf: gpd.GeoDataFrame, routes: list):
     plt.show()
 
 
-def plot_vrp_solution(data_gdf: gpd.GeoDataFrame, routes: list):
+def plot_vrp_solution(data_gdf: gpd.GeoDataFrame, routes: list) -> None:
     ax = plot_data_with_basemap(data_gdf)
 
     # Plot the optimal route between stops
-    for _, i, j in routes:
+    for k, i, j in routes:
+        color = "blue" if k == 0 else "purple" if k == 1 else "black"
+        arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor=color)
         ax.annotate(
             "",
             xy=[data_gdf.iloc[j].geometry.x, data_gdf.iloc[j].geometry.y],

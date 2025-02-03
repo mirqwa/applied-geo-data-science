@@ -16,6 +16,7 @@ def main(api_key: str) -> None:
         data_gdf, distances, VEHICLES, CAPACITY
     )
     routes = utils.get_vrt_routes(x, vehicles)
+    utils.plot_vrp_solution(data_gdf, routes)
 
 
 if __name__ == "__main__":
