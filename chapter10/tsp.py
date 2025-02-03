@@ -50,7 +50,7 @@ def get_optimal_distances(distances: np.array):
     return x
 
 
-def get_arrowprops(x: np.array) -> tuple:
+def get_routes(x: np.array) -> list:
     # Plot the optimal route between stops
     routes = [
         (i, j)
@@ -59,8 +59,7 @@ def get_arrowprops(x: np.array) -> tuple:
         if pulp.value(x[i, j]) == 1
     ]
 
-    arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor="darkblue")
-    return routes, arrowprops
+    return routes
 
 
 def main(api_key: str) -> None:
@@ -68,8 +67,8 @@ def main(api_key: str) -> None:
     data_gdf = utils.generate_data()
     distances = utils.get_origin_destination_cost_matrix(data_gdf, g_maps_client)
     x = get_optimal_distances(distances)
-    routes, arrowprops = get_arrowprops(x)
-    utils.plot_solution(data_gdf, routes, arrowprops)
+    routes = get_routes(x)
+    utils.plot_solution(data_gdf, routes)
 
 
 if __name__ == "__main__":
