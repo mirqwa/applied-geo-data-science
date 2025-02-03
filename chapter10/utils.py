@@ -145,7 +145,7 @@ def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
     return x
 
 
-def plot_solution(data_gdf: gpd.GeoDataFrame, x: dict):
+def plot_solution(data_gdf: gpd.GeoDataFrame, routes: list, arrowprops: dict):
     f, ax = plt.subplots(1, figsize=(15, 15))
 
     data_gdf.plot(ax=ax, color=data_gdf["colors"])
@@ -159,15 +159,6 @@ def plot_solution(data_gdf: gpd.GeoDataFrame, x: dict):
         ax.annotate(label, xy=(lon, lat), xytext=(3, 3), textcoords="offset points")
 
     # Plot the optimal route between stops
-    routes = [
-        (i, j)
-        for i in range(constants.CUSTOMERS + 1)
-        for j in range(constants.CUSTOMERS + 1)
-        if pulp.value(x[i, j]) == 1
-    ]
-
-    arrowprops = dict(arrowstyle="->", connectionstyle="arc3", edgecolor="darkblue")
-
     for i, j in routes:
         ax.annotate(
             "",
