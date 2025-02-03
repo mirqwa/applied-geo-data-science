@@ -140,3 +140,4 @@ def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
             print("# Required Vehicles:", vehicles)
             print("Distance:", pulp.value(lp_problem.objective))
             break
+    return x
