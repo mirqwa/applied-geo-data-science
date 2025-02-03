@@ -1,4 +1,5 @@
 import itertools
+from pathlib import Path
 
 import geopandas as gpd
 import gmaps
@@ -55,8 +56,11 @@ def get_gmaps_client(api_key: str) -> Client:
 
 
 def get_origin_destination_cost_matrix(
-    data_gdf: gpd.GeoDataFrame, g_maps_client: Client
+    data_gdf: gpd.GeoDataFrame, g_maps_client: Client, use_saved_distances: bool = False
 ) -> np.array:
+    file_name = f"data/new_york/distances_{len(data_gdf) - 1}.npy"
+    if Path(file_name).is_file() and use_saved_distances:
+        return np.load(file_name)
     distances = np.zeros((len(data_gdf), len(data_gdf)))
     data_gdf["coord"] = (
         data_gdf.latitude.astype(str) + "," + data_gdf.longitude.astype(str)
@@ -67,7 +71,9 @@ def get_origin_destination_cost_matrix(
                 data_gdf["coord"].iloc[lat], data_gdf["coord"].iloc[lon], mode="driving"
             )
             distances[lat][lon] = maps_api_result[0]["legs"][0]["distance"]["value"]
-    return distances.astype(int)
+    distances = distances.astype(int)
+    np.save(file_name, distances)
+    return distances
 
 
 def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
