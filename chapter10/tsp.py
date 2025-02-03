@@ -6,26 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pulp
 
-from googlemaps import Client
-
 import constants
 import utils
-
-
-def get_origin_destination_cost_matrix(
-    data_gdf: gpd.GeoDataFrame, g_maps_client: Client
-) -> np.array:
-    distances = np.zeros((len(data_gdf), len(data_gdf)))
-    data_gdf["coord"] = (
-        data_gdf.latitude.astype(str) + "," + data_gdf.longitude.astype(str)
-    )
-    for lat in range(len(data_gdf)):
-        for lon in range(len(data_gdf)):
-            maps_api_result = g_maps_client.directions(
-                data_gdf["coord"].iloc[lat], data_gdf["coord"].iloc[lon], mode="driving"
-            )
-            distances[lat][lon] = maps_api_result[0]["legs"][0]["distance"]["value"]
-    return distances.astype(int)
 
 
 def get_optimal_distances(distances: np.array):
@@ -105,7 +87,7 @@ def plot_solution(data_gdf: gpd.GeoDataFrame, x: dict):
 def main(api_key: str) -> None:
     g_maps_client = utils.get_gmaps_client(api_key)
     data_gdf = utils.generate_data()
-    distances = get_origin_destination_cost_matrix(data_gdf, g_maps_client)
+    distances = utils.get_origin_destination_cost_matrix(data_gdf, g_maps_client)
     x = get_optimal_distances(distances)
     plot_solution(data_gdf, x)
 

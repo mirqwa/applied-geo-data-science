@@ -54,6 +54,22 @@ def get_gmaps_client(api_key: str) -> Client:
     return g_maps_client
 
 
+def get_origin_destination_cost_matrix(
+    data_gdf: gpd.GeoDataFrame, g_maps_client: Client
+) -> np.array:
+    distances = np.zeros((len(data_gdf), len(data_gdf)))
+    data_gdf["coord"] = (
+        data_gdf.latitude.astype(str) + "," + data_gdf.longitude.astype(str)
+    )
+    for lat in range(len(data_gdf)):
+        for lon in range(len(data_gdf)):
+            maps_api_result = g_maps_client.directions(
+                data_gdf["coord"].iloc[lat], data_gdf["coord"].iloc[lon], mode="driving"
+            )
+            distances[lat][lon] = maps_api_result[0]["legs"][0]["distance"]["value"]
+    return distances.astype(int)
+
+
 def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
     for vehicles in range(1, vehicles + 1):
         lp_problem = pulp.LpProblem("VRP", pulp.LpMinimize)
