@@ -141,26 +141,32 @@ def add_vrt_constraints(
     return lp_problem
 
 
+def add_subtours_constraint(
+    lp_problem: pulp.LpProblem, vehicles: int, x: list
+) -> pulp.LpProblem:
+    subtours = []
+    for i in range(2, constants.CUSTOMERS + 1):
+        subtours += itertools.combinations(range(1, constants.CUSTOMERS + 1), i)
+    for s in subtours:
+        lp_problem += (
+            pulp.lpSum(
+                x[i][j][k] if i != j else 0
+                for i, j in itertools.permutations(s, 2)
+                for k in range(vehicles)
+            )
+            <= len(s) - 1
+        )
+
+    return lp_problem
+
+
 def get_optimal_distances_for_vrp(vehicles: int, distances: np.array):
     for vehicles in range(1, vehicles + 1):
         lp_problem = pulp.LpProblem("VRP", pulp.LpMinimize)
         x = get_vrp_problem_variables(vehicles)
         lp_problem += get_objective_function(distances, vehicles, x)
         lp_problem = add_vrt_constraints(lp_problem, vehicles, x)
-
-        subtours = []
-        for i in range(2, constants.CUSTOMERS + 1):
-            subtours += itertools.combinations(range(1, constants.CUSTOMERS + 1), i)
-        for s in subtours:
-            lp_problem += (
-                pulp.lpSum(
-                    x[i][j][k] if i != j else 0
-                    for i, j in itertools.permutations(s, 2)
-                    for k in range(vehicles)
-                )
-                <= len(s) - 1
-            )
-
+        lp_problem = add_subtours_constraint(lp_problem, vehicles, x)
         if lp_problem.solve() == 1:
             print("# Required Vehicles:", vehicles)
             print("Distance:", pulp.value(lp_problem.objective))
@@ -198,19 +204,7 @@ def get_optimal_distances_for_vapacitated_vrp(
                 <= capacity
             )
 
-        # Adding additional constraint to prevent subtours. We'll use DFJ formulation here.
-        subtours = []
-        for i in range(2, constants.CUSTOMERS + 1):
-            subtours += itertools.combinations(range(1, constants.CUSTOMERS + 1), i)
-        for s in subtours:
-            lp_problem += (
-                pulp.lpSum(
-                    x[i][j][k] if i != j else 0
-                    for i, j in itertools.permutations(s, 2)
-                    for k in range(vehicles)
-                )
-                <= len(s) - 1
-            )
+        lp_problem = add_subtours_constraint(lp_problem, vehicles, x)
 
         if lp_problem.solve() == 1:
             print("# Required Vehicles:", vehicles)
