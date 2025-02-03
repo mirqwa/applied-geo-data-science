@@ -30,9 +30,32 @@ def filter_without_spatial_indexing(
     manhattan_listings_gdf = listings_gdf.loc[mask]
     end = time.time()
     print("Time take to filter without masking:", round(end - start, 2), "seconds")
+    return manhattan_listings_gdf
+
+
+def filter_with_spatial_indexing(
+    listings_gdf: gpd.GeoDataFrame, manhattan_boroughs: gpd.GeoDataFrame
+) -> gpd.GeoDataFrame:
+    geometry = manhattan_boroughs.geometry
+    sindex = listings_gdf.sindex
+    start = time.time()
+    idex_possible_matches = list(sindex.intersection(geometry.bounds.values[0]))
+    possible_matches_df = listings_gdf.iloc[idex_possible_matches]
+    manhattan_listings_gdf = possible_matches_df[
+        possible_matches_df.intersects(geometry, align=True)
+    ]
+    end = time.time()
+    print("Time take to filter with masking:", round(end - start, 2), "seconds")
+    return manhattan_listings_gdf
+
 
 
 if __name__ == "__main__":
     listings_gdf = get_listings()
     manhattan_boroughs = get_manhattan_boroughs()
-    filter_without_spatial_indexing(listings_gdf, manhattan_boroughs)
+    manhattan_listings_gdf1 = filter_without_spatial_indexing(
+        listings_gdf, manhattan_boroughs
+    )
+    manhattan_listings_gdf2 = filter_with_spatial_indexing(
+        listings_gdf, manhattan_boroughs
+    )
