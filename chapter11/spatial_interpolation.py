@@ -105,8 +105,8 @@ def ordinary_kriging_interpolation(mean_temperature_gdf: gpd.GeoDataFrame) -> No
     max_x = max(mean_temperature_gdf["Longitude"])
     min_y = min(mean_temperature_gdf["Latitude"])
     max_y = max(mean_temperature_gdf["Latitude"])
-    gridx = np.arange(min_x, max_x, 0.1, dtype="float64")
-    gridy = np.arange(min_y, max_y, 0.1, dtype="float64")
+    gridx = np.arange(min_x, max_x, 0.05, dtype="float64")
+    gridy = np.arange(min_y, max_y, 0.05, dtype="float64")
 
     temps_nogeom = mean_temperature_gdf.drop(["geometry"], axis=1)
     temps_array = temps_nogeom.to_numpy()
