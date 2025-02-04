@@ -33,11 +33,9 @@ def filter_without_spatial_indexing(
     return manhattan_listings_gdf
 
 
-def filter_with_spatial_indexing(
-    listings_gdf: gpd.GeoDataFrame, manhattan_boroughs: gpd.GeoDataFrame
+def run_intersection(
+    geometry: gpd.GeoSeries, listings_gdf: gpd.GeoDataFrame
 ) -> gpd.GeoDataFrame:
-    listings_gdf.index = [0 for _ in range(37548)]
-    geometry = manhattan_boroughs.geometry
     sindex = listings_gdf.sindex
     start = time.time()
     idex_possible_matches = list(sindex.intersection(geometry.bounds.values[0]))
@@ -49,6 +47,14 @@ def filter_with_spatial_indexing(
     print("Time take to filter with masking:", round(end - start, 2), "seconds")
     return manhattan_listings_gdf
 
+
+def filter_with_spatial_indexing(
+    listings_gdf: gpd.GeoDataFrame, manhattan_boroughs: gpd.GeoDataFrame
+) -> gpd.GeoDataFrame:
+    listings_gdf.index = [0 for _ in range(37548)]
+    geometry = manhattan_boroughs.geometry
+    manhattan_listings_gdf = run_intersection(geometry)
+    return manhattan_listings_gdf
 
 
 if __name__ == "__main__":
