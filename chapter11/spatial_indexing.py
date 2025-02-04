@@ -1,6 +1,7 @@
 import time
 
 import geopandas as gpd
+import osmnx as ox
 import pandas as pd
 
 
@@ -34,7 +35,7 @@ def filter_without_spatial_indexing(
 
 
 def run_intersection(
-    geometry: gpd.GeoSeries, listings_gdf: gpd.GeoDataFrame
+    listings_gdf: gpd.GeoDataFrame, geometry: gpd.GeoSeries
 ) -> gpd.GeoDataFrame:
     sindex = listings_gdf.sindex
     start = time.time()
@@ -51,9 +52,8 @@ def run_intersection(
 def filter_with_spatial_indexing(
     listings_gdf: gpd.GeoDataFrame, manhattan_boroughs: gpd.GeoDataFrame
 ) -> gpd.GeoDataFrame:
-    listings_gdf.index = [0 for _ in range(37548)]
     geometry = manhattan_boroughs.geometry
-    manhattan_listings_gdf = run_intersection(geometry)
+    manhattan_listings_gdf = run_intersection(listings_gdf, geometry)
     return manhattan_listings_gdf
 
 
@@ -61,8 +61,9 @@ if __name__ == "__main__":
     listings_gdf = get_listings()
     manhattan_boroughs = get_manhattan_boroughs()
     manhattan_listings_gdf1 = filter_without_spatial_indexing(
-        listings_gdf.copy(), manhattan_boroughs
+        listings_gdf, manhattan_boroughs
     )
+    listings_gdf.index = [0 for _ in range(37548)]
     manhattan_listings_gdf2 = filter_with_spatial_indexing(
-        listings_gdf.copy(), manhattan_boroughs
+        listings_gdf, manhattan_boroughs
     )
