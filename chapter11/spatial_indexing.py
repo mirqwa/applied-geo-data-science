@@ -1,7 +1,9 @@
 import time
 
+import contextily as cx
 import h3
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from shapely import Polygon
@@ -69,12 +71,32 @@ def add_h3_geometry(row):
     return Polygon(points)
 
 
-def filter_with_h3_indexing(listings_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def plot_airbnbs_choropleth(gdf: gpd.GeoDataFrame) -> None:
+    _, ax = plt.subplots(1, figsize=(15, 15))
+    gdf_wm = gdf.to_crs(epsg=3857)
+    gdf_wm.plot(
+        ax=ax,
+        column="count",
+        cmap="coolwarm",
+        scheme="quantiles",
+        k=4,
+        edgecolor="white",
+        linewidth=0.1,
+        alpha=0.5,
+        legend=True,
+    )
+    cx.add_basemap(ax, crs=gdf_wm.crs, zoom=12)
+    plt.show()
+
+
+def h3_indexing(listings_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     listings_gdf["h3"] = listings_gdf.apply(add_h3_id, axis=1)
     airbnb_count = (
         listings_gdf.groupby(["h3"]).h3.agg("count").to_frame("count").reset_index()
     )
     airbnb_count["geometry"] = airbnb_count.apply(add_h3_geometry, axis=1)
+    gdf = gpd.GeoDataFrame(airbnb_count, crs="EPSG:4326")
+    plot_airbnbs_choropleth(gdf)
 
 
 if __name__ == "__main__":
@@ -87,4 +109,4 @@ if __name__ == "__main__":
     manhattan_listings_gdf2 = filter_with_spatial_indexing(
         listings_gdf, manhattan_boroughs
     )
-    filter_with_h3_indexing(listings_gdf)
+    h3_indexing(manhattan_listings_gdf1)
