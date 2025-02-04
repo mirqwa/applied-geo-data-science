@@ -4,6 +4,8 @@ import h3
 import geopandas as gpd
 import pandas as pd
 
+from shapely import Polygon
+
 
 def get_listings() -> gpd.GeoDataFrame:
     listings_df = pd.read_csv("data/listings.csv.gz")
@@ -62,11 +64,17 @@ def add_h3_id(row):
     return h3.latlng_to_cell(row.geometry.y, row.geometry.x, h3_resolution)
 
 
+def add_h3_geometry(row):
+    points = h3.cell_to_boundary(row["h3"])
+    return Polygon(points)
+
+
 def filter_with_h3_indexing(listings_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     listings_gdf["h3"] = listings_gdf.apply(add_h3_id, axis=1)
     airbnb_count = (
         listings_gdf.groupby(["h3"]).h3.agg("count").to_frame("count").reset_index()
     )
+    airbnb_count["geometry"] = airbnb_count.apply(add_h3_geometry, axis=1)
 
 
 if __name__ == "__main__":
