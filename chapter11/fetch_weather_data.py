@@ -53,7 +53,7 @@ LOCATIONS = [
     "Oldham",
 ]
 
-DATES = ["2025-02-01"]
+DATES = ["2024-06-01"]
 
 
 def get_station_code(station_name):

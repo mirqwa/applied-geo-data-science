@@ -62,7 +62,7 @@ def pre_process_columns(row):
 
 
 def process_weather_data(result_file):
-    for month_index in pd.date_range(start="2025-02-01", end="2025-03-31", freq="M"):
+    for month_index in pd.date_range(start="2024-02-01", end="2025-03-31", freq="M"):
         year_month = month_index.strftime("%Y-%m")
         print("Processing data for", year_month)
         try:
