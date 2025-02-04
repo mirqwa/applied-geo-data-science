@@ -70,6 +70,36 @@ def idw_interpolation() -> None:
     )
 
 
+def plot_interpolated_values(
+    temps_array: np.array,
+    z: np.array,
+    min_x: float,
+    max_x: float,
+    min_y: float,
+    max_y: float,
+) -> None:
+    im = plt.imshow(
+        z,
+        extent=[min_x - 0.05, max_x + 0.05, min_y - 0.05, max_y + 0.05],
+        origin="lower",
+        cmap="coolwarm",
+    )
+    plt.scatter(
+        temps_array[:, 1],
+        temps_array[:, 0],
+        c=temps_array[:, 2],
+        alpha=0.5,
+        marker="o",
+        s=20,
+        edgecolors="black",
+        linewidth=1,
+        cmap="coolwarm",
+    )
+    cbar = plt.colorbar(im)
+    plt.title("Interpolated Temperature")
+    plt.show()
+
+
 def ordinary_kriging_interpolation(mean_temperature_gdf: gpd.GeoDataFrame) -> None:
     min_x = min(mean_temperature_gdf["Longitude"])
     max_x = max(mean_temperature_gdf["Longitude"])
@@ -90,11 +120,12 @@ def ordinary_kriging_interpolation(mean_temperature_gdf: gpd.GeoDataFrame) -> No
         enable_plotting=True,  # True plots the emperical semivariogram
     )
 
-    z, ss = Orid_Krig.execute("grid", gridx, gridy)
+    z, _ = Orid_Krig.execute("grid", gridx, gridy)
+    plot_interpolated_values(temps_array, z, min_x, max_x, min_y, max_y)
 
 
 if __name__ == "__main__":
     mean_temperature_gdf = get_weather_data()
-    get_region()
-    idw_interpolation()
+    # get_region()
+    # idw_interpolation()
     ordinary_kriging_interpolation(mean_temperature_gdf)
