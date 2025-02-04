@@ -26,8 +26,9 @@ def get_weather_data():
     weather_df = pd.concat(dfs)
     weather_df = weather_df[weather_df["Date"] == "2025-02-01"]
     weather_df = weather_df.dropna()
+    weather_df = weather_df.rename(columns={"Temperature": "Temp"})
     mean_temperature_df = (
-        weather_df.groupby(["Longitude", "Latitude"])["Temperature"]
+        weather_df.groupby(["Longitude", "Latitude"])["Temp"]
         .mean()
         .reset_index()
     )
@@ -40,6 +41,7 @@ def get_weather_data():
     )
     print(mean_temperature_gdf.shape)
     plot_average_temperature(mean_temperature_gdf)
+    mean_temperature_gdf.to_file("data/weather/2025-02-01/temperature.shp")
 
 
 def get_region():
