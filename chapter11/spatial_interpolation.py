@@ -45,7 +45,14 @@ def get_weather_data():
 def get_region():
     path = "data/weather/regions/NUTS1_Jan_2018_UGCB_in_the_UK_2022_-1274845379350881254.geojson"
     uk_gdf = gpd.read_file(path)
+    uk_gdf = uk_gdf.to_crs("EPSG:4326")
+    england_gdf = uk_gdf[
+        ~uk_gdf["nuts118nm"].isin(["Wales", "Scotland", "Northern Ireland"])
+    ]
+    uk_gdf = uk_gdf.dissolve()
     uk_gdf.to_file("data/weather/uk/uk.shp")
+    england_gdf = england_gdf.dissolve()
+    england_gdf.to_file("data/weather/england/uk.shp")
 
 
 if __name__ == "__main__":
