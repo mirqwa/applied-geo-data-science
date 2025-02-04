@@ -36,6 +36,7 @@ def filter_without_spatial_indexing(
 def filter_with_spatial_indexing(
     listings_gdf: gpd.GeoDataFrame, manhattan_boroughs: gpd.GeoDataFrame
 ) -> gpd.GeoDataFrame:
+    listings_gdf.index = [0 for _ in range(37548)]
     geometry = manhattan_boroughs.geometry
     sindex = listings_gdf.sindex
     start = time.time()
@@ -54,8 +55,8 @@ if __name__ == "__main__":
     listings_gdf = get_listings()
     manhattan_boroughs = get_manhattan_boroughs()
     manhattan_listings_gdf1 = filter_without_spatial_indexing(
-        listings_gdf, manhattan_boroughs
+        listings_gdf.copy(), manhattan_boroughs
     )
     manhattan_listings_gdf2 = filter_with_spatial_indexing(
-        listings_gdf, manhattan_boroughs
+        listings_gdf.copy(), manhattan_boroughs
     )
