@@ -7,16 +7,13 @@ import pandas as pd
 
 
 def plot_average_temperature(mean_temperature_gdf: gpd.GeoDataFrame) -> None:
-    _, ax = plt.subplots(1, figsize=(15, 15))
-    mean_temperature_gdf_wm = mean_temperature_gdf.to_crs(epsg=3857)
-    mean_temperature_gdf_wm.plot(ax=ax, alpha=0.5, edgecolor="k")
-    cx.add_basemap(
-        ax,
-        crs=mean_temperature_gdf_wm.crs,
-        zoom=16,
-        source=cx.providers.OpenStreetMap.Mapnik,
+    temps_nogeom = mean_temperature_gdf.drop(["geometry"], axis=1)
+    temps_array = temps_nogeom.to_numpy()
+    obs = plt.scatter(
+        temps_array[:, 0], temps_array[:, 1], c=temps_array[:, 2], cmap="coolwarm"
     )
-    ax.set_axis_off()
+    cbar = plt.colorbar(obs)
+    plt.title("Observed Temperatures")
     plt.show()
 
 
@@ -41,8 +38,16 @@ def get_weather_data():
         ),
         crs="EPSG:4326",
     )
+    print(mean_temperature_gdf.shape)
     plot_average_temperature(mean_temperature_gdf)
+
+
+def get_region():
+    path = "data/weather/regions/NUTS1_Jan_2018_UGCB_in_the_UK_2022_-1274845379350881254.geojson"
+    uk_gdf = gpd.read_file(path)
+    london_gdf = uk_gdf[uk_gdf["nuts118nm"] == "London"]
 
 
 if __name__ == "__main__":
     get_weather_data()
+    get_region()
