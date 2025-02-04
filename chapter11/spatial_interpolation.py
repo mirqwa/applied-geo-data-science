@@ -126,6 +126,6 @@ def ordinary_kriging_interpolation(mean_temperature_gdf: gpd.GeoDataFrame) -> No
 
 if __name__ == "__main__":
     mean_temperature_gdf = get_weather_data()
-    # get_region()
-    # idw_interpolation()
+    get_region()
+    idw_interpolation()
     ordinary_kriging_interpolation(mean_temperature_gdf)
