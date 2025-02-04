@@ -18,7 +18,7 @@ def plot_average_temperature(mean_temperature_gdf: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
-def get_weather_data():
+def get_weather_data() -> None:
     weather_dir = "data/weather/processed_stations/2025/2025-02"
     weather_files = os.listdir(weather_dir)
     dfs = []
@@ -43,7 +43,7 @@ def get_weather_data():
     mean_temperature_gdf.to_file("data/weather/2025-02-01/temperature.shp")
 
 
-def get_region():
+def get_region() -> None:
     path = "data/weather/regions/NUTS1_Jan_2018_UGCB_in_the_UK_2022_-1274845379350881254.geojson"
     uk_gdf = gpd.read_file(path)
     uk_gdf = uk_gdf.to_crs("EPSG:4326")
@@ -56,7 +56,7 @@ def get_region():
     england_gdf.to_file("data/weather/england/england.shp")
 
 
-def idw_interpolation():
+def idw_interpolation() -> None:
     idw.idw_interpolation(
         input_point_shapefile="data/weather/2025-02-01/temperature.shp",
         extent_shapefile="data/weather/england/england.shp",
