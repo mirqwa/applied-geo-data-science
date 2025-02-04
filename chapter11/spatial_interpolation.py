@@ -85,8 +85,8 @@ def plot_interpolated_values(
         cmap="coolwarm",
     )
     plt.scatter(
-        temps_array[:, 1],
         temps_array[:, 0],
+        temps_array[:, 1],
         c=temps_array[:, 2],
         alpha=0.5,
         marker="o",
