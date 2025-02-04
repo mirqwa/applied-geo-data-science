@@ -2,6 +2,7 @@ import os
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from pyidw import idw
@@ -18,7 +19,7 @@ def plot_average_temperature(mean_temperature_gdf: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
-def get_weather_data() -> None:
+def get_weather_data() -> gpd.GeoDataFrame:
     weather_dir = "data/weather/processed_stations/2025/2025-02"
     weather_files = os.listdir(weather_dir)
     dfs = []
@@ -41,6 +42,7 @@ def get_weather_data() -> None:
     print(mean_temperature_gdf.shape)
     plot_average_temperature(mean_temperature_gdf)
     mean_temperature_gdf.to_file("data/weather/2025-02-01/temperature.shp")
+    return mean_temperature_gdf
 
 
 def get_region() -> None:
@@ -67,7 +69,17 @@ def idw_interpolation() -> None:
     )
 
 
+def ordinary_kriging_interpolation(mean_temperature_gdf: gpd.GeoDataFrame) -> None:
+    min_x = min(mean_temperature_gdf["Longitude"])
+    max_x = max(mean_temperature_gdf["Longitude"])
+    min_y = min(mean_temperature_gdf["Latitude"])
+    max_y = max(mean_temperature_gdf["Latitude"])
+    gridx = np.arange(min_x, max_x, 0.1, dtype="float64")
+    gridy = np.arange(min_y, max_y, 0.1, dtype="float64")
+
+
 if __name__ == "__main__":
-    get_weather_data()
+    mean_temperature_gdf = get_weather_data()
+    ordinary_kriging_interpolation(mean_temperature_gdf)
     get_region()
     idw_interpolation()
