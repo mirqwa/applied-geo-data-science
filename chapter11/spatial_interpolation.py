@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from pykrige.ok import OrdinaryKriging
 from pyidw import idw
 
 
@@ -77,9 +78,23 @@ def ordinary_kriging_interpolation(mean_temperature_gdf: gpd.GeoDataFrame) -> No
     gridx = np.arange(min_x, max_x, 0.1, dtype="float64")
     gridy = np.arange(min_y, max_y, 0.1, dtype="float64")
 
+    temps_nogeom = mean_temperature_gdf.drop(["geometry"], axis=1)
+    temps_array = temps_nogeom.to_numpy()
+
+    Orid_Krig = OrdinaryKriging(
+        temps_array[:, 0],  # Longitude vector
+        temps_array[:, 1],  # Latitude vector
+        temps_array[:, 2],  # Temperatures vector
+        variogram_model="gaussian",  # The semivariogram model
+        verbose=True,  # True writes out the steps as they're being performed
+        enable_plotting=True,  # True plots the emperical semivariogram
+    )
+
+    z, ss = Orid_Krig.execute("grid", gridx, gridy)
+
 
 if __name__ == "__main__":
     mean_temperature_gdf = get_weather_data()
-    ordinary_kriging_interpolation(mean_temperature_gdf)
     get_region()
     idw_interpolation()
+    ordinary_kriging_interpolation(mean_temperature_gdf)
