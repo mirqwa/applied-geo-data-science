@@ -1,9 +1,10 @@
 import os
 
-import contextily as cx
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
+
+from pyidw import idw
 
 
 def plot_average_temperature(mean_temperature_gdf: gpd.GeoDataFrame) -> None:
@@ -28,9 +29,7 @@ def get_weather_data():
     weather_df = weather_df.dropna()
     weather_df = weather_df.rename(columns={"Temperature": "Temp"})
     mean_temperature_df = (
-        weather_df.groupby(["Longitude", "Latitude"])["Temp"]
-        .mean()
-        .reset_index()
+        weather_df.groupby(["Longitude", "Latitude"])["Temp"].mean().reset_index()
     )
     mean_temperature_gdf = gpd.GeoDataFrame(
         mean_temperature_df,
@@ -54,9 +53,21 @@ def get_region():
     uk_gdf = uk_gdf.dissolve()
     uk_gdf.to_file("data/weather/uk/uk.shp")
     england_gdf = england_gdf.dissolve()
-    england_gdf.to_file("data/weather/england/uk.shp")
+    england_gdf.to_file("data/weather/england/england.shp")
+
+
+def idw_interpolation():
+    idw.idw_interpolation(
+        input_point_shapefile="data/weather/2025-02-01/temperature.shp",
+        extent_shapefile="data/weather/england/england.shp",
+        column_name="Temp",
+        power=2,
+        search_radious=3,
+        output_resolution=250,
+    )
 
 
 if __name__ == "__main__":
     get_weather_data()
     get_region()
+    idw_interpolation()
