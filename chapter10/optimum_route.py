@@ -49,7 +49,10 @@ def plot_cities(cities_gdf: gpd.GeoDataFrame) -> None:
     plt.show()
 
 
-def prepare_cities_data(g_maps_client) -> gpd.GeoDataFrame:
+def prepare_cities_data(g_maps_client, use_saved_coordinates=False) -> gpd.GeoDataFrame:
+    file_name = "data/kenya/cities.geojson"
+    if Path(file_name).is_file() and use_saved_coordinates:
+        return gpd.read_file(file_name)
     cities_locations = []
     for city in CITIES:
         geocode_result = g_maps_client.geocode(city)
@@ -72,7 +75,7 @@ def prepare_cities_data(g_maps_client) -> gpd.GeoDataFrame:
         ),
         crs="EPSG:4326",
     )
-    cities_locations_gdf.to_file("data/kenya/cities.geojson")
+    cities_locations_gdf.to_file(file_name)
     return cities_locations_gdf
 
 
@@ -103,7 +106,7 @@ def get_origin_destination_cost_matrix(
 
 def main(api_key: str) -> None:
     g_maps_client = utils.get_gmaps_client(api_key)
-    cities_locations_gdf = prepare_cities_data(g_maps_client)
+    cities_locations_gdf = prepare_cities_data(g_maps_client, use_saved_coordinates=True)
     plot_cities(cities_locations_gdf)
     distances = get_origin_destination_cost_matrix(
         cities_locations_gdf, g_maps_client, use_saved_distances=True
