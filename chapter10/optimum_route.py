@@ -12,6 +12,7 @@ import utils
 
 
 random.seed(32)
+np.random.seed(32)
 
 CITIES = [
     "Nairobi",
@@ -42,6 +43,7 @@ CITIES = [
     "Narok",
     "Malaba",
 ]
+EPSILON = 10
 
 
 def plot_cities(cities_gdf: gpd.GeoDataFrame) -> None:
@@ -114,6 +116,11 @@ def get_q_learning_cost_table(
     q_table = np.zeros((cities_locations_gdf.shape[0], cities_locations_gdf.shape[0]))
     for episode in range(num_episodes):
         current_city = start_city_index
+        while current_city != end_city_index:
+            if np.random.uniform(0, 1) < EPSILON:
+                pass
+            else:
+                pass
 
 
 def get_shortest_distance(
