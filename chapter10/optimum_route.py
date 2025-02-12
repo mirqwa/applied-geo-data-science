@@ -228,6 +228,14 @@ def shortest_path_using_pulp(
     D = {node: 1 if node == start_city else -1 if node == end_city else 0 for node in N}
     E = [(i, j) for i in N for j in N if i in C.keys() if j in C[i].keys()]
     x = pulp.LpVariable.dicts("x", E, lowBound=0, upBound=1, cat=pulp.LpInteger)
+    
+    prob += pulp.lpSum([C[i][j] * x[i, j] for (i, j) in E])
+
+    for i in N:
+        prob += (
+            pulp.lpSum([x[i, j] for j in N if (i, j) in E])
+            - pulp.lpSum([x[k, i] for k in N if (k, i) in E])
+        ) == D[i]
 
 
 def main(api_key: str) -> None:
