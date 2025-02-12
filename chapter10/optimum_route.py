@@ -104,19 +104,33 @@ def get_origin_destination_cost_matrix(
     return distances
 
 
+def get_q_learning_cost_table(
+    cities_locations_gdf: gpd.GeoDataFrame,
+    num_episodes: int,
+    start_city_index: str,
+    end_city_index: str,
+    distances: np.ndarray,
+) -> np.ndarray:
+    q_table = np.zeros((cities_locations_gdf.shape[0], cities_locations_gdf.shape[0]))
+    for episode in range(num_episodes):
+        current_city = start_city_index
+
+
 def get_shortest_distance(
     cities_locations_gdf: gpd.GeoDataFrame,
     distances: np.ndarray,
     start_city: str,
     end_city: str,
 ):
-    q_table = np.zeros((cities_locations_gdf.shape[0], cities_locations_gdf.shape[0]))
     start_city_index = cities_locations_gdf[
         cities_locations_gdf["Label"] == start_city
     ].index[0]
     end_city_index = cities_locations_gdf[
         cities_locations_gdf["Label"] == end_city
     ].index[0]
+    get_q_learning_cost_table(
+        cities_locations_gdf, 20, start_city_index, end_city_index, distances
+    )
 
 
 def main(api_key: str) -> None:
