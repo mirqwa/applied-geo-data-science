@@ -168,9 +168,13 @@ def get_optimum_path(
         cities_locations_gdf["Label"] == end_city
     ].index[0]
     q_table = get_q_learning_cost_table(
-        cities_locations_gdf, 100, start_city_index, end_city_index, distances
+        cities_locations_gdf, 10000, start_city_index, end_city_index, distances
     )
-    return get_shortest_path(q_table, start_city_index, end_city_index)
+    shortest_path = get_shortest_path(q_table, start_city_index, end_city_index)
+    shortest_path = [
+        cities_locations_gdf["Label"][city_index] for city_index in shortest_path
+    ]
+    return shortest_path
 
 
 def main(api_key: str) -> None:
