@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 import random
 
+import contextily as cx
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -41,7 +42,11 @@ CITIES = [
     "Maai Mahiu",
     "Longonot",
     "Narok",
-    "Malaba"
+    "Malaba",
+]
+CITIES_TO_LABEL = [
+    "Nairobi",
+    "Kitale",
 ]
 EPSILON = 0.2
 LEARNING_RATE = 0.8
@@ -49,7 +54,27 @@ DISCOUNT_FACTOR = 0.95
 
 
 def plot_cities(cities_gdf: gpd.GeoDataFrame) -> None:
-    ax = utils.plot_data_with_basemap(cities_gdf)
+    _, ax = plt.subplots(1, figsize=(15, 15))
+
+    cities_gdf.plot(ax=ax, color="black", markersize=30)
+
+    # Add basemap
+    cx.add_basemap(
+        ax, crs=cities_gdf.crs, zoom=8, source=cx.providers.OpenStreetMap.Mapnik
+    )
+
+    for lon, lat, label in zip(
+        cities_gdf.geometry.x, cities_gdf.geometry.y, cities_gdf.Label
+    ):
+        if label in CITIES_TO_LABEL:
+            ax.annotate(
+                label,
+                xy=(lon, lat),
+                xytext=(3, -3),
+                textcoords="offset points",
+                size=12,
+            )
+    ax.set_axis_off()
     plt.show()
 
 
@@ -182,7 +207,7 @@ def main(api_key: str) -> None:
     cities_locations_gdf = prepare_cities_data(
         g_maps_client, use_saved_coordinates=True
     )
-    # plot_cities(cities_locations_gdf)
+    plot_cities(cities_locations_gdf)
     distances = get_origin_destination_cost_matrix(
         cities_locations_gdf, g_maps_client, use_saved_distances=True
     )
