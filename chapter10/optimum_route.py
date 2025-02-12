@@ -44,6 +44,8 @@ CITIES = [
     "Malaba",
 ]
 EPSILON = 10
+LEARNING_RATE = 0.01
+DISCOUNT_FACTOR = 0.01
 
 
 def plot_cities(cities_gdf: gpd.GeoDataFrame) -> None:
@@ -114,13 +116,32 @@ def get_q_learning_cost_table(
     distances: np.ndarray,
 ) -> np.ndarray:
     q_table = np.zeros((cities_locations_gdf.shape[0], cities_locations_gdf.shape[0]))
-    for episode in range(num_episodes):
+    for _ in range(num_episodes):
         current_city = start_city_index
         while current_city != end_city_index:
             if np.random.uniform(0, 1) < EPSILON:
-                pass
+                possible_actions = np.where(distances[current_city, :] > 0)[0]
+                if len(possible_actions) == 0:
+                    break
+                action = np.random.choice(possible_actions)
             else:
-                pass
+                possible_actions = np.where(
+                    q_table[current_city, :] == np.max(q_table[current_city, :])
+                )[0]
+                if len(possible_actions) == 0:
+                    break
+                action = np.random.choice(possible_actions)
+            next_node = action
+            reward = -distances[current_city, next_node]
+            q_table[current_city, next_node] = (1 - LEARNING_RATE) * q_table[
+                current_city, next_node
+            ] + LEARNING_RATE * (
+                reward + DISCOUNT_FACTOR * np.max(q_table[next_node, :])
+            )
+            current_city = next_node
+            if current_city == end_city_index:
+                break
+    return q_table
 
 
 def get_shortest_distance(
@@ -135,7 +156,7 @@ def get_shortest_distance(
     end_city_index = cities_locations_gdf[
         cities_locations_gdf["Label"] == end_city
     ].index[0]
-    get_q_learning_cost_table(
+    q_table = get_q_learning_cost_table(
         cities_locations_gdf, 20, start_city_index, end_city_index, distances
     )
 
