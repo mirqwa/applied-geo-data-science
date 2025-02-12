@@ -43,9 +43,9 @@ CITIES = [
     "Narok",
     "Malaba",
 ]
-EPSILON = 10
-LEARNING_RATE = 0.01
-DISCOUNT_FACTOR = 0.01
+EPSILON = 0.2
+LEARNING_RATE = 0.8
+DISCOUNT_FACTOR = 0.95
 
 
 def plot_cities(cities_gdf: gpd.GeoDataFrame) -> None:
@@ -104,6 +104,7 @@ def get_origin_destination_cost_matrix(
             )
             distances[lat][lon] = maps_api_result[0]["legs"][0]["distance"]["value"]
     distances = distances.astype(int)
+    distances = np.where(distances == 0, float("inf"), distances)
     np.save(file_name, distances)
     return distances
 
@@ -142,12 +143,24 @@ def get_q_learning_cost_table(
     return q_table
 
 
-def get_shortest_distance(
+def get_shortest_path(
+    q_table: np.ndarray, start_city_index: int, end_city_index: int
+) -> list:
+    shortest_path = [start_city_index]
+    current_city = start_city_index
+    while current_city != end_city_index:
+        next_city = np.argmax(q_table[current_city, :])
+        shortest_path.append(next_city)
+        current_city = next_city
+    return shortest_path
+
+
+def get_optimum_path(
     cities_locations_gdf: gpd.GeoDataFrame,
     distances: np.ndarray,
     start_city: str,
     end_city: str,
-):
+) -> list:
     start_city_index = cities_locations_gdf[
         cities_locations_gdf["Label"] == start_city
     ].index[0]
@@ -155,8 +168,9 @@ def get_shortest_distance(
         cities_locations_gdf["Label"] == end_city
     ].index[0]
     q_table = get_q_learning_cost_table(
-        cities_locations_gdf, 20, start_city_index, end_city_index, distances
+        cities_locations_gdf, 100, start_city_index, end_city_index, distances
     )
+    return get_shortest_path(q_table, start_city_index, end_city_index)
 
 
 def main(api_key: str) -> None:
@@ -168,7 +182,9 @@ def main(api_key: str) -> None:
     distances = get_origin_destination_cost_matrix(
         cities_locations_gdf, g_maps_client, use_saved_distances=True
     )
-    get_shortest_distance(cities_locations_gdf, distances, "Nairobi", "Kitale")
+    shortest_path = get_optimum_path(
+        cities_locations_gdf, distances, "Nairobi", "Kitale"
+    )
 
 
 if __name__ == "__main__":
