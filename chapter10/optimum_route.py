@@ -42,6 +42,14 @@ CITIES = [
     "Longonot",
     "Narok",
     "Malaba",
+    "Kimende",
+    "Kinungi",
+    "Soy",
+    "Moi's Bridge",
+    "Kawangware",
+    "Kikuyu",
+    "Uthiru",
+    "Kangemi",
 ]
 EPSILON = 0.2
 LEARNING_RATE = 0.8
@@ -184,7 +192,7 @@ def main(api_key: str) -> None:
     )
     # plot_cities(cities_locations_gdf)
     distances = get_origin_destination_cost_matrix(
-        cities_locations_gdf, g_maps_client, use_saved_distances=True
+        cities_locations_gdf, g_maps_client, use_saved_distances=False
     )
     shortest_path = get_optimum_path(
         cities_locations_gdf, distances, "Nairobi", "Kitale"
