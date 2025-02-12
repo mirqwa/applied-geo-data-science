@@ -1,8 +1,11 @@
 import argparse
+from datetime import datetime
+from pathlib import Path
 import random
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 import utils
@@ -62,21 +65,49 @@ def prepare_cities_data(g_maps_client) -> gpd.GeoDataFrame:
         except Exception:
             print(f"Failed to get coordinates for {city}")
     cities_locations_df = pd.DataFrame(cities_locations)
-    cities_locations_gpf = gpd.GeoDataFrame(
+    cities_locations_gdf = gpd.GeoDataFrame(
         cities_locations_df,
         geometry=gpd.points_from_xy(
             cities_locations_df["lng"], cities_locations_df["lat"]
         ),
         crs="EPSG:4326",
     )
-    cities_locations_gpf.to_file("data/kenya/cities.geojson")
-    return cities_locations_gpf
+    cities_locations_gdf.to_file("data/kenya/cities.geojson")
+    return cities_locations_gdf
+
+
+def get_origin_destination_cost_matrix(
+    cities_locations_gdf: gpd.GeoDataFrame, g_maps_client, use_saved_distances=False
+) -> np.ndarray:
+    file_name = f"data/kenya/distances_{len(cities_locations_gdf) - 1}.npy"
+    if Path(file_name).is_file() and use_saved_distances:
+        return np.load(file_name)
+    distances = np.zeros((len(cities_locations_gdf), len(cities_locations_gdf)))
+    cities_locations_gdf["coord"] = (
+        cities_locations_gdf.lat.astype(str)
+        + ","
+        + cities_locations_gdf.lng.astype(str)
+    )
+    for lat in range(len(cities_locations_gdf)):
+        for lon in range(len(cities_locations_gdf)):
+            maps_api_result = g_maps_client.directions(
+                cities_locations_gdf["coord"].iloc[lat],
+                cities_locations_gdf["coord"].iloc[lon],
+                mode="driving",
+            )
+            distances[lat][lon] = maps_api_result[0]["legs"][0]["distance"]["value"]
+    distances = distances.astype(int)
+    np.save(file_name, distances)
+    return distances
 
 
 def main(api_key: str) -> None:
     g_maps_client = utils.get_gmaps_client(api_key)
-    cities_locations_gpf = prepare_cities_data(g_maps_client)
-    plot_cities(cities_locations_gpf)
+    cities_locations_gdf = prepare_cities_data(g_maps_client)
+    plot_cities(cities_locations_gdf)
+    distances = get_origin_destination_cost_matrix(
+        cities_locations_gdf, g_maps_client, use_saved_distances=True
+    )
 
 
 if __name__ == "__main__":
