@@ -17,7 +17,6 @@ np.random.seed(32)
 
 CITIES = [
     "Nairobi",
-    "Mombasa",
     "Kitale",
     "Kisumu",
     "Machakos",
@@ -43,6 +42,14 @@ CITIES = [
     "Longonot",
     "Narok",
     "Malaba",
+    "Nyeri",
+    "Embu",
+    "Narok",
+    "Ruiru",
+    "Ngong",
+    "Kapenguria",
+    "Kericho",
+    "Kimende"
 ]
 CITIES_TO_LABEL = [
     "Nairobi",
