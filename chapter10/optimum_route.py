@@ -8,6 +8,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pulp
 
 import utils
 
@@ -49,7 +50,7 @@ CITIES = [
     "Ngong",
     "Kapenguria",
     "Kericho",
-    "Kimende"
+    "Kimende",
 ]
 CITIES_TO_LABEL = [
     "Nairobi",
@@ -60,7 +61,7 @@ LEARNING_RATE = 0.8
 DISCOUNT_FACTOR = 0.95
 
 
-def plot_cities(cities_gdf: gpd.GeoDataFrame, path: list=[]) -> None:
+def plot_cities(cities_gdf: gpd.GeoDataFrame, path: list = []) -> None:
     _, ax = plt.subplots(1, figsize=(15, 15))
 
     cities_gdf.plot(ax=ax, color="black", markersize=30)
@@ -212,6 +213,17 @@ def get_optimum_path(
     return shortest_path, route
 
 
+def shortest_path_using_pulp(
+    cities_locations_gdf: gpd.GeoDataFrame, distances: np.ndarray
+):
+    prob = pulp.LpProblem("prob", pulp.LpMinimize)
+    N = cities_locations_gdf["Label"].tolist()
+    C = {
+        x: {N[i]: distances[index, i] for i in range(len(N)) if i != index}
+        for index, x in enumerate(N)
+    }
+
+
 def main(api_key: str) -> None:
     g_maps_client = utils.get_gmaps_client(api_key)
     cities_locations_gdf = prepare_cities_data(
@@ -225,6 +237,7 @@ def main(api_key: str) -> None:
         cities_locations_gdf, distances, "Nairobi", "Kitale"
     )
     plot_cities(cities_locations_gdf, route)
+    shortest_path_using_pulp(cities_locations_gdf, distances)
 
 
 if __name__ == "__main__":
