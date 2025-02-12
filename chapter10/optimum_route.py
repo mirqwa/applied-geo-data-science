@@ -119,18 +119,16 @@ def get_q_learning_cost_table(
     for _ in range(num_episodes):
         current_city = start_city_index
         while current_city != end_city_index:
-            if np.random.uniform(0, 1) < EPSILON:
-                possible_actions = np.where(distances[current_city, :] > 0)[0]
-                if len(possible_actions) == 0:
-                    break
-                action = np.random.choice(possible_actions)
-            else:
-                possible_actions = np.where(
+            possible_actions = (
+                np.where(distances[current_city, :] > 0)[0]
+                if np.random.uniform(0, 1) < EPSILON
+                else np.where(
                     q_table[current_city, :] == np.max(q_table[current_city, :])
                 )[0]
-                if len(possible_actions) == 0:
-                    break
-                action = np.random.choice(possible_actions)
+            )
+            if len(possible_actions) == 0:
+                break
+            action = np.random.choice(possible_actions)
             next_node = action
             reward = -distances[current_city, next_node]
             q_table[current_city, next_node] = (1 - LEARNING_RATE) * q_table[
