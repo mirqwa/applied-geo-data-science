@@ -53,7 +53,7 @@ LEARNING_RATE = 0.8
 DISCOUNT_FACTOR = 0.95
 
 
-def plot_cities(cities_gdf: gpd.GeoDataFrame) -> None:
+def plot_cities(cities_gdf: gpd.GeoDataFrame, path: list=[]) -> None:
     _, ax = plt.subplots(1, figsize=(15, 15))
 
     cities_gdf.plot(ax=ax, color="black", markersize=30)
@@ -74,6 +74,8 @@ def plot_cities(cities_gdf: gpd.GeoDataFrame) -> None:
                 textcoords="offset points",
                 size=12,
             )
+    for i, j in path:
+        utils.annotate_route(ax, cities_gdf, i, j, "darkblue")
     ax.set_axis_off()
     plt.show()
 
@@ -177,7 +179,8 @@ def get_shortest_path(
         next_city = np.argmax(q_table[current_city, :])
         shortest_path.append(next_city)
         current_city = next_city
-    return shortest_path
+    route = [(start, dest) for start, dest in zip(shortest_path, shortest_path[1:])]
+    return shortest_path, route
 
 
 def get_optimum_path(
@@ -195,11 +198,11 @@ def get_optimum_path(
     q_table = get_q_learning_cost_table(
         cities_locations_gdf, 10000, start_city_index, end_city_index, distances
     )
-    shortest_path = get_shortest_path(q_table, start_city_index, end_city_index)
+    shortest_path, route = get_shortest_path(q_table, start_city_index, end_city_index)
     shortest_path = [
         cities_locations_gdf["Label"][city_index] for city_index in shortest_path
     ]
-    return shortest_path
+    return shortest_path, route
 
 
 def main(api_key: str) -> None:
@@ -211,9 +214,10 @@ def main(api_key: str) -> None:
     distances = get_origin_destination_cost_matrix(
         cities_locations_gdf, g_maps_client, use_saved_distances=True
     )
-    shortest_path = get_optimum_path(
+    shortest_path, route = get_optimum_path(
         cities_locations_gdf, distances, "Nairobi", "Kitale"
     )
+    plot_cities(cities_locations_gdf, route)
 
 
 if __name__ == "__main__":
