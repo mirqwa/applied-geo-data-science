@@ -104,13 +104,25 @@ def get_origin_destination_cost_matrix(
     return distances
 
 
+def get_shortest_distance(
+    cities_locations_gdf: gpd.GeoDataFrame,
+    distances: np.ndarray,
+    start_city: str,
+    end_city: str,
+):
+    q_table = np.zeros((cities_locations_gdf.shape[0], cities_locations_gdf.shape[0]))
+
+
 def main(api_key: str) -> None:
     g_maps_client = utils.get_gmaps_client(api_key)
-    cities_locations_gdf = prepare_cities_data(g_maps_client, use_saved_coordinates=True)
-    plot_cities(cities_locations_gdf)
+    cities_locations_gdf = prepare_cities_data(
+        g_maps_client, use_saved_coordinates=True
+    )
+    # plot_cities(cities_locations_gdf)
     distances = get_origin_destination_cost_matrix(
         cities_locations_gdf, g_maps_client, use_saved_distances=True
     )
+    get_shortest_distance(cities_locations_gdf, distances, "Nairobi", "Kitale")
 
 
 if __name__ == "__main__":
