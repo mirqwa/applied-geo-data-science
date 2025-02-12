@@ -111,6 +111,12 @@ def get_shortest_distance(
     end_city: str,
 ):
     q_table = np.zeros((cities_locations_gdf.shape[0], cities_locations_gdf.shape[0]))
+    start_city_index = cities_locations_gdf[
+        cities_locations_gdf["Label"] == start_city
+    ].index[0]
+    end_city_index = cities_locations_gdf[
+        cities_locations_gdf["Label"] == end_city
+    ].index[0]
 
 
 def main(api_key: str) -> None:
