@@ -214,7 +214,10 @@ def get_optimum_path(
 
 
 def shortest_path_using_pulp(
-    cities_locations_gdf: gpd.GeoDataFrame, distances: np.ndarray
+    cities_locations_gdf: gpd.GeoDataFrame,
+    distances: np.ndarray,
+    start_city: str,
+    end_city: str,
 ):
     prob = pulp.LpProblem("prob", pulp.LpMinimize)
     N = cities_locations_gdf["Label"].tolist()
@@ -222,6 +225,9 @@ def shortest_path_using_pulp(
         x: {N[i]: distances[index, i] for i in range(len(N)) if i != index}
         for index, x in enumerate(N)
     }
+    D = {node: 1 if node == start_city else -1 if node == end_city else 0 for node in N}
+    E = [(i, j) for i in N for j in N if i in C.keys() if j in C[i].keys()]
+    x = pulp.LpVariable.dicts("x", E, lowBound=0, upBound=1, cat=pulp.LpInteger)
 
 
 def main(api_key: str) -> None:
@@ -237,7 +243,7 @@ def main(api_key: str) -> None:
         cities_locations_gdf, distances, "Nairobi", "Kitale"
     )
     plot_cities(cities_locations_gdf, route)
-    shortest_path_using_pulp(cities_locations_gdf, distances)
+    shortest_path_using_pulp(cities_locations_gdf, distances, "Nairobi", "Kitale")
 
 
 if __name__ == "__main__":
