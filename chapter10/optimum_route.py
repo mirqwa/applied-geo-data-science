@@ -51,6 +51,15 @@ CITIES = [
     "Kapenguria",
     "Kericho",
     "Kimende",
+    "Kampala",
+    "Jinja",
+    "Busia",
+    "Mbale",
+    "Tororo",
+    "Lwakhakha",
+    "Suam",
+    "Turbo",
+    "Entebbe",
 ]
 CITIES_TO_LABEL = [
     "Nairobi",
@@ -89,7 +98,7 @@ def plot_cities(cities_gdf: gpd.GeoDataFrame, path: list = []) -> None:
 
 
 def prepare_cities_data(g_maps_client, use_saved_coordinates=False) -> gpd.GeoDataFrame:
-    file_name = "data/kenya/cities.geojson"
+    file_name = "data/east_africa/cities.geojson"
     if Path(file_name).is_file() and use_saved_coordinates:
         return gpd.read_file(file_name)
     cities_locations = []
@@ -121,9 +130,12 @@ def prepare_cities_data(g_maps_client, use_saved_coordinates=False) -> gpd.GeoDa
 def get_origin_destination_cost_matrix(
     cities_locations_gdf: gpd.GeoDataFrame, g_maps_client, use_saved_distances=False
 ) -> np.ndarray:
-    file_name = f"data/kenya/distances_{len(cities_locations_gdf) - 1}.npy"
+    file_name = f"data/east_africa/distances_{len(cities_locations_gdf) - 1}.npy"
     if Path(file_name).is_file() and use_saved_distances:
-        return np.load(file_name)
+        distances = np.load(file_name)
+        distances = distances.astype(int)
+        distances = np.where(distances == 0, float("inf"), distances)
+        return distances
     distances = np.zeros((len(cities_locations_gdf), len(cities_locations_gdf)))
     cities_locations_gdf["coord"] = (
         cities_locations_gdf.lat.astype(str)
@@ -213,6 +225,14 @@ def get_optimum_path(
     return shortest_path, route
 
 
+def get_solution(problem_variables: list):
+    cities_in_path = []
+    for v in problem_variables:
+        if v.varValue == 1:
+            cities_in_path.append(v.name)
+    breakpoint()
+
+
 def shortest_path_using_pulp(
     cities_locations_gdf: gpd.GeoDataFrame,
     distances: np.ndarray,
@@ -242,6 +262,7 @@ def shortest_path_using_pulp(
         ) == D[i]
 
     status = prob.solve()
+    get_solution(prob.variables())
 
 
 def main(api_key: str) -> None:
@@ -253,11 +274,12 @@ def main(api_key: str) -> None:
     distances = get_origin_destination_cost_matrix(
         cities_locations_gdf, g_maps_client, use_saved_distances=True
     )
+    breakpoint()
     shortest_path, route = get_optimum_path(
-        cities_locations_gdf, distances, "Nairobi", "Kitale"
+        cities_locations_gdf, distances, "Nairobi", "Malaba"
     )
     plot_cities(cities_locations_gdf, route)
-    shortest_path_using_pulp(cities_locations_gdf, distances, "Nairobi", "Kitale")
+    shortest_path_using_pulp(cities_locations_gdf, distances, "Nairobi", "Malaba")
 
 
 if __name__ == "__main__":
