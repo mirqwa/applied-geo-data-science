@@ -182,6 +182,7 @@ def update_q_table(
     action: int,
     next_city: int,
 ) -> None:
+    # the reward is negative since the goal is to have minimum distance
     reward = -distances[current_city, next_city]
     current_state_action_value = q_table[current_city, action]
     next_state_action_value = np.max(q_table[next_city, :])
@@ -233,7 +234,7 @@ def get_shortest_path(
     return shortest_path, route
 
 
-def get_optimum_path(
+def get_optimal_path(
     cities_locations_gdf: gpd.GeoDataFrame,
     distances: np.ndarray,
     start_city: str,
@@ -316,7 +317,7 @@ def main(api_key: str) -> None:
     )
     distances_df.to_csv("data/east_africa/distances.csv")
     distances = np.where(distances == 0, float("inf"), distances)
-    shortest_path, route = get_optimum_path(
+    shortest_path, route = get_optimal_path(
         cities_locations_gdf, distances, "Nairobi", "Kampala"
     )
     plot_cities(cities_locations_gdf, route)
