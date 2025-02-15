@@ -55,7 +55,7 @@ CITIES = [
     "Ugunja",
     "Chwele",
 ]
-CITIES_TO_LABEL = ["Nairobi", "Kitale", "Kampala"]
+CITIES_TO_LABEL = {"Nairobi": "ORIGIN", "Kampala": "DESTINATION"}
 EPSILON = 0.2
 LEARNING_RATE = 0.8
 DISCOUNT_FACTOR = 0.95
@@ -63,8 +63,16 @@ DISCOUNT_FACTOR = 0.95
 
 def plot_cities(cities_gdf: gpd.GeoDataFrame, path: list = []) -> None:
     _, ax = plt.subplots(1, figsize=(15, 15))
+    cities_gdf["markersize"] = np.where(
+        cities_gdf["Label"].isin(["Nairobi", "Kampala"]), 150, 50
+    )
+    cities_gdf["color"] = np.where(
+        cities_gdf["Label"].isin(["Nairobi", "Kampala"]), "red", "purple"
+    )
 
-    cities_gdf.plot(ax=ax, color="black", markersize=30)
+    cities_gdf.plot(
+        ax=ax, color=cities_gdf["color"], markersize=cities_gdf["markersize"], alpha=0.5
+    )
 
     # Add basemap
     cx.add_basemap(
@@ -74,13 +82,15 @@ def plot_cities(cities_gdf: gpd.GeoDataFrame, path: list = []) -> None:
     for lon, lat, label in zip(
         cities_gdf.geometry.x, cities_gdf.geometry.y, cities_gdf.Label
     ):
-        if label in CITIES_TO_LABEL:
+        city_label = CITIES_TO_LABEL.get(label)
+        if city_label:
             ax.annotate(
-                label,
+                city_label,
                 xy=(lon, lat),
-                xytext=(3, -3),
+                xytext=(-20, -20),
                 textcoords="offset points",
-                size=12,
+                size=15,
+                color="blue"
             )
     for i, j in path:
         utils.annotate_route(ax, cities_gdf, i, j, "darkblue")
