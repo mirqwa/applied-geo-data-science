@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime
 from pathlib import Path
 import random
+import time
 
 import contextily as cx
 import geopandas as gpd
@@ -25,32 +26,17 @@ CITIES = [
     "Nakuru",
     "Bungoma",
     "Naivasha",
-    "Kisii",
     "Kakamega",
     "Webuye",
-    "Kabarnet",
     "Iten",
     "Eldoret",
     "Busia",
-    "Mau Summit",
     "Kericho",
-    "Kapsabet",
-    "Chemelil",
-    "Muhoroni",
-    "Burnt Forest",
     "Thika",
-    "Maai Mahiu",
-    "Longonot",
     "Narok",
     "Malaba",
-    "Nyeri",
-    "Embu",
     "Narok",
-    "Ruiru",
-    "Ngong",
-    "Kapenguria",
     "Kericho",
-    "Kimende",
     "Kampala",
     "Jinja",
     "Busia",
@@ -58,12 +44,21 @@ CITIES = [
     "Tororo",
     "Lwakhakha",
     "Suam",
-    "Turbo",
     "Entebbe",
+    "Siaya",
+    "Eldama Ravine",
+    "Bomet",
+    "Bondo",
+    "Ahero",
+    "Muhoroni",
+    "Butere",
+    "Ugunja",
+    "Chwele"
 ]
 CITIES_TO_LABEL = [
     "Nairobi",
     "Kitale",
+    "Kampala"
 ]
 EPSILON = 0.2
 LEARNING_RATE = 0.8
@@ -132,10 +127,8 @@ def get_origin_destination_cost_matrix(
 ) -> np.ndarray:
     file_name = f"data/east_africa/distances_{len(cities_locations_gdf) - 1}.npy"
     if Path(file_name).is_file() and use_saved_distances:
-        distances = np.load(file_name)
-        distances = distances.astype(int)
-        distances = np.where(distances == 0, float("inf"), distances)
-        return distances
+        return np.load(file_name)
+    saved_distances = pd.read_csv("data/east_africa/distances.csv")
     distances = np.zeros((len(cities_locations_gdf), len(cities_locations_gdf)))
     cities_locations_gdf["coord"] = (
         cities_locations_gdf.lat.astype(str)
@@ -144,14 +137,29 @@ def get_origin_destination_cost_matrix(
     )
     for lat in range(len(cities_locations_gdf)):
         for lon in range(len(cities_locations_gdf)):
+            origin = cities_locations_gdf["Label"][lat]
+            destination = cities_locations_gdf["Label"][lon]
+            city_distances = saved_distances[
+                saved_distances["Label"] == origin
+            ].reset_index()
+            distance = None
+            if not city_distances.empty:
+                city_distances = city_distances.iloc[0].to_dict()
+                distance = city_distances.get(destination)
+            if distance is not None:
+                distances[lat][lon] = distance
+                print(f"Distance for {origin} -> {destination} already fetched")
+                continue
+            print(f"Getting distance for {origin} -> {destination}")
             maps_api_result = g_maps_client.directions(
                 cities_locations_gdf["coord"].iloc[lat],
                 cities_locations_gdf["coord"].iloc[lon],
                 mode="driving",
             )
             distances[lat][lon] = maps_api_result[0]["legs"][0]["distance"]["value"]
-    distances = distances.astype(int)
-    distances = np.where(distances == 0, float("inf"), distances)
+        time.sleep(60)
+    distances /= 1000
+    # distances = np.where(distances == 0, float("inf"), distances)
     np.save(file_name, distances)
     return distances
 
@@ -164,7 +172,8 @@ def get_q_learning_cost_table(
     distances: np.ndarray,
 ) -> np.ndarray:
     q_table = np.zeros((cities_locations_gdf.shape[0], cities_locations_gdf.shape[0]))
-    for _ in range(num_episodes):
+    for i in range(num_episodes):
+        print("Running episode", i + 1)
         current_city = start_city_index
         while current_city != end_city_index:
             possible_actions = (
@@ -195,10 +204,14 @@ def get_shortest_path(
 ) -> list:
     shortest_path = [start_city_index]
     current_city = start_city_index
+    count = 0
     while current_city != end_city_index:
+        count += 1
         next_city = np.argmax(q_table[current_city, :])
         shortest_path.append(next_city)
         current_city = next_city
+        if count == 10:
+            break
     route = [(start, dest) for start, dest in zip(shortest_path, shortest_path[1:])]
     return shortest_path, route
 
@@ -218,6 +231,12 @@ def get_optimum_path(
     q_table = get_q_learning_cost_table(
         cities_locations_gdf, 10000, start_city_index, end_city_index, distances
     )
+    q_table_df = pd.DataFrame(
+        data=q_table,
+        index=cities_locations_gdf["Label"],
+        columns=cities_locations_gdf["Label"],
+    )
+    q_table_df.to_csv(f"data/east_africa/{start_city}_{end_city}_q_table.csv")
     shortest_path, route = get_shortest_path(q_table, start_city_index, end_city_index)
     shortest_path = [
         cities_locations_gdf["Label"][city_index] for city_index in shortest_path
@@ -230,7 +249,6 @@ def get_solution(problem_variables: list):
     for v in problem_variables:
         if v.varValue == 1:
             cities_in_path.append(v.name)
-    breakpoint()
 
 
 def shortest_path_using_pulp(
@@ -274,12 +292,18 @@ def main(api_key: str) -> None:
     distances = get_origin_destination_cost_matrix(
         cities_locations_gdf, g_maps_client, use_saved_distances=True
     )
-    breakpoint()
+    distances_df = pd.DataFrame(
+        data=distances,
+        columns=cities_locations_gdf["Label"],
+        index=cities_locations_gdf["Label"],
+    )
+    distances_df.to_csv("data/east_africa/distances.csv")
+    distances = np.where(distances == 0, float("inf"), distances)
     shortest_path, route = get_optimum_path(
-        cities_locations_gdf, distances, "Nairobi", "Malaba"
+        cities_locations_gdf, distances, "Nairobi", "Kampala"
     )
     plot_cities(cities_locations_gdf, route)
-    shortest_path_using_pulp(cities_locations_gdf, distances, "Nairobi", "Malaba")
+    shortest_path_using_pulp(cities_locations_gdf, distances, "Nairobi", "Kampala")
 
 
 if __name__ == "__main__":
