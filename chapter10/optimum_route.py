@@ -160,6 +160,21 @@ def get_imtercity_distances(
     return distances
 
 
+def select_next_action(
+    distances: np.ndarray, current_city: int, q_table: np.ndarray
+) -> int:
+    possible_actions = (
+        np.where(distances[current_city, :] > 0)[0]  # exploration
+        if np.random.uniform(0, 1) < EPSILON
+        else np.where(
+            q_table[current_city, :] == np.max(q_table[current_city, :])  # exploitation
+        )[0]
+    )
+    if len(possible_actions) == 0:
+        return
+    return np.random.choice(possible_actions)
+
+
 def get_q_learning_cost_table(
     cities_locations_gdf: gpd.GeoDataFrame,
     num_episodes: int,
@@ -171,17 +186,9 @@ def get_q_learning_cost_table(
     for _ in range(num_episodes):
         current_city = start_city_index
         while current_city != end_city_index:
-            possible_actions = (
-                np.where(distances[current_city, :] > 0)[0]  # exploration
-                if np.random.uniform(0, 1) < EPSILON
-                else np.where(
-                    q_table[current_city, :]
-                    == np.max(q_table[current_city, :])  # exploitation
-                )[0]
-            )
-            if len(possible_actions) == 0:
+            action = select_next_action(distances, current_city, q_table)
+            if action is None:
                 break
-            action = np.random.choice(possible_actions)
             next_city = action
             reward = -distances[current_city, next_city]
             current_state_action_value = q_table[current_city, action]
