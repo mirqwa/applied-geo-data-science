@@ -53,13 +53,9 @@ CITIES = [
     "Muhoroni",
     "Butere",
     "Ugunja",
-    "Chwele"
+    "Chwele",
 ]
-CITIES_TO_LABEL = [
-    "Nairobi",
-    "Kitale",
-    "Kampala"
-]
+CITIES_TO_LABEL = ["Nairobi", "Kitale", "Kampala"]
 EPSILON = 0.2
 LEARNING_RATE = 0.8
 DISCOUNT_FACTOR = 0.95
@@ -122,7 +118,7 @@ def prepare_cities_data(g_maps_client, use_saved_coordinates=False) -> gpd.GeoDa
     return cities_locations_gdf
 
 
-def get_origin_destination_cost_matrix(
+def get_imtercity_distances(
     cities_locations_gdf: gpd.GeoDataFrame, g_maps_client, use_saved_distances=False
 ) -> np.ndarray:
     file_name = f"data/east_africa/distances_{len(cities_locations_gdf) - 1}.npy"
@@ -172,28 +168,32 @@ def get_q_learning_cost_table(
     distances: np.ndarray,
 ) -> np.ndarray:
     q_table = np.zeros((cities_locations_gdf.shape[0], cities_locations_gdf.shape[0]))
-    for i in range(num_episodes):
-        print("Running episode", i + 1)
+    for _ in range(num_episodes):
         current_city = start_city_index
         while current_city != end_city_index:
             possible_actions = (
-                np.where(distances[current_city, :] > 0)[0]
+                np.where(distances[current_city, :] > 0)[0]  # exploration
                 if np.random.uniform(0, 1) < EPSILON
                 else np.where(
-                    q_table[current_city, :] == np.max(q_table[current_city, :])
+                    q_table[current_city, :]
+                    == np.max(q_table[current_city, :])  # exploitation
                 )[0]
             )
             if len(possible_actions) == 0:
                 break
             action = np.random.choice(possible_actions)
-            next_node = action
-            reward = -distances[current_city, next_node]
-            q_table[current_city, next_node] = (1 - LEARNING_RATE) * q_table[
-                current_city, next_node
-            ] + LEARNING_RATE * (
-                reward + DISCOUNT_FACTOR * np.max(q_table[next_node, :])
+            next_city = action
+            reward = -distances[current_city, next_city]
+            current_state_action_value = q_table[current_city, action]
+            next_state_action_value = np.max(q_table[next_city, :])
+
+            q_table[current_city, action] = (
+                1 - LEARNING_RATE
+            ) * current_state_action_value + LEARNING_RATE * (
+                reward + DISCOUNT_FACTOR * next_state_action_value
             )
-            current_city = next_node
+
+            current_city = next_city
             if current_city == end_city_index:
                 break
     return q_table
@@ -289,7 +289,7 @@ def main(api_key: str) -> None:
         g_maps_client, use_saved_coordinates=True
     )
     plot_cities(cities_locations_gdf)
-    distances = get_origin_destination_cost_matrix(
+    distances = get_imtercity_distances(
         cities_locations_gdf, g_maps_client, use_saved_distances=True
     )
     distances_df = pd.DataFrame(
