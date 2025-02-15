@@ -118,13 +118,12 @@ def prepare_cities_data(g_maps_client, use_saved_coordinates=False) -> gpd.GeoDa
     return cities_locations_gdf
 
 
-def get_imtercity_distances(
+def get_intercity_distances(
     cities_locations_gdf: gpd.GeoDataFrame, g_maps_client, use_saved_distances=False
 ) -> np.ndarray:
     file_name = f"data/east_africa/distances_{len(cities_locations_gdf) - 1}.npy"
     if Path(file_name).is_file() and use_saved_distances:
         return np.load(file_name)
-    saved_distances = pd.read_csv("data/east_africa/distances.csv")
     distances = np.zeros((len(cities_locations_gdf), len(cities_locations_gdf)))
     cities_locations_gdf["coord"] = (
         cities_locations_gdf.lat.astype(str)
@@ -135,17 +134,6 @@ def get_imtercity_distances(
         for lon in range(len(cities_locations_gdf)):
             origin = cities_locations_gdf["Label"][lat]
             destination = cities_locations_gdf["Label"][lon]
-            city_distances = saved_distances[
-                saved_distances["Label"] == origin
-            ].reset_index()
-            distance = None
-            if not city_distances.empty:
-                city_distances = city_distances.iloc[0].to_dict()
-                distance = city_distances.get(destination)
-            if distance is not None:
-                distances[lat][lon] = distance
-                print(f"Distance for {origin} -> {destination} already fetched")
-                continue
             print(f"Getting distance for {origin} -> {destination}")
             maps_api_result = g_maps_client.directions(
                 cities_locations_gdf["coord"].iloc[lat],
@@ -153,9 +141,6 @@ def get_imtercity_distances(
                 mode="driving",
             )
             distances[lat][lon] = maps_api_result[0]["legs"][0]["distance"]["value"]
-        time.sleep(60)
-    distances /= 1000
-    # distances = np.where(distances == 0, float("inf"), distances)
     np.save(file_name, distances)
     return distances
 
@@ -230,6 +215,13 @@ def get_shortest_path(
     return shortest_path, route
 
 
+def get_distance(distances: np.array, route: list) -> int:
+    route_distance = 0
+    for origin, destination in route:
+        route_distance += distances[origin][destination]
+    return int(route_distance)
+
+
 def get_optimal_path(
     cities_locations_gdf: gpd.GeoDataFrame,
     distances: np.ndarray,
@@ -252,6 +244,7 @@ def get_optimal_path(
     )
     q_table_df.to_csv(f"data/east_africa/{start_city}_{end_city}_q_table.csv")
     shortest_path, route = get_shortest_path(q_table, start_city_index, end_city_index)
+    route_distance = get_distance(distances, route)
     shortest_path = [
         cities_locations_gdf["Label"][city_index] for city_index in shortest_path
     ]
@@ -304,7 +297,7 @@ def main(api_key: str) -> None:
         g_maps_client, use_saved_coordinates=True
     )
     plot_cities(cities_locations_gdf)
-    distances = get_imtercity_distances(
+    distances = get_intercity_distances(
         cities_locations_gdf, g_maps_client, use_saved_distances=True
     )
     distances_df = pd.DataFrame(
@@ -313,6 +306,7 @@ def main(api_key: str) -> None:
         index=cities_locations_gdf["Label"],
     )
     distances_df.to_csv("data/east_africa/distances.csv")
+    distances = distances / 1000
     distances = np.where(distances == 0, float("inf"), distances)
     shortest_path, route = get_optimal_path(
         cities_locations_gdf, distances, "Nairobi", "Kampala"
