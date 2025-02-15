@@ -222,14 +222,10 @@ def get_shortest_path(
 ) -> list:
     shortest_path = [start_city_index]
     current_city = start_city_index
-    count = 0
     while current_city != end_city_index:
-        count += 1
         next_city = np.argmax(q_table[current_city, :])
         shortest_path.append(next_city)
         current_city = next_city
-        if count == 10:
-            break
     route = [(start, dest) for start, dest in zip(shortest_path, shortest_path[1:])]
     return shortest_path, route
 
@@ -247,7 +243,7 @@ def get_optimal_path(
         cities_locations_gdf["Label"] == end_city
     ].index[0]
     q_table = get_q_learning_cost_table(
-        cities_locations_gdf, 10000, start_city_index, end_city_index, distances
+        cities_locations_gdf, 1000, start_city_index, end_city_index, distances
     )
     q_table_df = pd.DataFrame(
         data=q_table,
@@ -320,6 +316,8 @@ def main(api_key: str) -> None:
     shortest_path, route = get_optimal_path(
         cities_locations_gdf, distances, "Nairobi", "Kampala"
     )
+    print(shortest_path)
+    print(route)
     plot_cities(cities_locations_gdf, route)
     shortest_path_using_pulp(cities_locations_gdf, distances, "Nairobi", "Kampala")
 
