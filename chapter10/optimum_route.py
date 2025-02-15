@@ -175,6 +175,24 @@ def select_next_action(
     return np.random.choice(possible_actions)
 
 
+def update_q_table(
+    q_table: np.ndarray,
+    distances: np.ndarray,
+    current_city: int,
+    action: int,
+    next_city: int,
+) -> None:
+    reward = -distances[current_city, next_city]
+    current_state_action_value = q_table[current_city, action]
+    next_state_action_value = np.max(q_table[next_city, :])
+
+    q_table[current_city, action] = (
+        1 - LEARNING_RATE
+    ) * current_state_action_value + LEARNING_RATE * (
+        reward + DISCOUNT_FACTOR * next_state_action_value
+    )
+
+
 def get_q_learning_cost_table(
     cities_locations_gdf: gpd.GeoDataFrame,
     num_episodes: int,
@@ -190,15 +208,7 @@ def get_q_learning_cost_table(
             if action is None:
                 break
             next_city = action
-            reward = -distances[current_city, next_city]
-            current_state_action_value = q_table[current_city, action]
-            next_state_action_value = np.max(q_table[next_city, :])
-
-            q_table[current_city, action] = (
-                1 - LEARNING_RATE
-            ) * current_state_action_value + LEARNING_RATE * (
-                reward + DISCOUNT_FACTOR * next_state_action_value
-            )
+            update_q_table(q_table, distances, current_city, action, next_city)
 
             current_city = next_city
             if current_city == end_city_index:
