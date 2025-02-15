@@ -255,6 +255,7 @@ def get_optimal_path(
     shortest_path = [
         cities_locations_gdf["Label"][city_index] for city_index in shortest_path
     ]
+    shortest_path = " -> ".join(shortest_path)
     return shortest_path, route
 
 
